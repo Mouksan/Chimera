@@ -1,28 +1,58 @@
-/* Chimera — стили. Живём на теме таверны (SmartTheme-переменные), акцент — цвет цитат. */
+/* Chimera — стили. Живём на теме таверны (SmartTheme-переменные), акцент — цвет цитат.
+   Окно во весь экран — схема из Loom. */
 
-/* ---------- Подложка и окно (порт из Junket) ---------- */
+/* ---------- Подложка и окно: полный экран (схема Loom + фикс высоты из Junket) ---------- */
 
 .chm-overlay {
-    /* Не inset: 0 — в мобильном Firefox <html> с translateZ(0) становится опорой для fixed
-       и окно уезжает за верх. Размеры от экрана; --chm-vh ставит index.js по visualViewport. */
+    /* Полный экран, как в Loom: подложка на весь экран, окно занимает её целиком.
+       Не inset: 0 — в мобильном Firefox <html> с translateZ(0) становится опорой для fixed
+       и окно уезжает за верх. Размеры от экрана; --chm-vh ставит index.js по visualViewport.
+       Слой 99999 (как у Loom): меню палочки и попапы таверны сидят на 29999.
+       Подтверждения таверны (<dialog>) всё равно окажутся сверху — они в top layer. */
     position: fixed;
     top: var(--chm-top, 0px);
     left: 0;
-    z-index: 9999;
+    z-index: 99999;
     box-sizing: border-box;
     display: none;
-    align-items: center;
-    justify-content: center;
     width: 100vw;
     height: 100vh;
     height: var(--chm-vh, 100dvh);
-    padding: 16px;
+    /* Безопасная зона: вырезы и статус-бар (TauriTavern отдаёт их в --tt-inset-*, браузер — в env()) */
+    padding:
+        var(--tt-inset-top, env(safe-area-inset-top, 0px))
+        var(--tt-inset-right, env(safe-area-inset-right, 0px))
+        var(--tt-viewport-bottom-inset, env(safe-area-inset-bottom, 0px))
+        var(--tt-inset-left, env(safe-area-inset-left, 0px));
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(6px);
 }
 
 .chm-overlay.chm-open {
     display: flex;
+    animation: chm-fade-in 0.15s ease-out;
+}
+
+.chm-overlay.chm-closing {
+    animation: chm-fade-out 0.15s ease-in forwards;
+}
+
+@keyframes chm-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes chm-fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chm-overlay.chm-open,
+    .chm-overlay.chm-closing {
+        animation: none;
+    }
 }
 
 .chm-window {
@@ -34,15 +64,11 @@
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    width: min(1600px, 100%);
+    width: 100%;
     height: 100%;
     overflow: hidden;
     color: var(--SmartThemeBodyColor);
     background: var(--SmartThemeBlurTintColor);
-    backdrop-filter: blur(var(--SmartThemeBlurStrength, 10px));
-    border: 1px solid var(--chm-line);
-    border-radius: 14px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
 /* ---------- Шапка ---------- */
@@ -428,15 +454,6 @@
 }
 
 @media (max-width: 900px) {
-    .chm-overlay {
-        padding: 0;
-    }
-
-    .chm-window {
-        border-radius: 0;
-        border: none;
-    }
-
     .chm-title span {
         display: none;
     }

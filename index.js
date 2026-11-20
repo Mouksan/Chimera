@@ -1,5 +1,5 @@
 // Chimera — конструктор персонажа по тегам
-// Этап 1: каркас — окно-оверлей в две колонки, кнопки запуска, настройки под шестерёнкой
+// Этап 1: каркас — окно во весь экран в две колонки, кнопки запуска, настройки под шестерёнкой
 
 import { getSettings, saveSettings } from './store.js';
 import { addSettingsDrawer, settingsPaneHtml, bindSettingsPane } from './settings.js';
@@ -70,11 +70,6 @@ function buildWindow() {
     overlay.querySelector('.chm-close').addEventListener('click', closeWindow);
     overlay.querySelector('.chm-gear').addEventListener('click', () => (settingsOpen ? closeSettings() : openSettings()));
     overlay.querySelector('.chm-settings-back').addEventListener('click', closeSettings);
-
-    // Клик мимо окна закрывает его (mousedown — чтобы выделение текста не закрывало случайно)
-    overlay.addEventListener('mousedown', (e) => {
-        if (e.target === overlay) closeWindow();
-    });
 
     overlay.querySelectorAll('.chm-mtab').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -175,8 +170,13 @@ function bindViewport() {
     overlayEl?.addEventListener('scroll', keepOverlayOnScreen, { passive: true });
 }
 
+const FADE_MS = 150;
+let closeTimer = null;
+
 function openWindow() {
     if (!overlayEl) overlayEl = buildWindow();
+    clearTimeout(closeTimer);
+    overlayEl.classList.remove('chm-closing');
     syncViewportHeight();
     bindViewport();
     settingsOpen = false;
@@ -187,9 +187,18 @@ function openWindow() {
 }
 
 function closeWindow() {
-    if (!overlayEl) return;
-    overlayEl.classList.remove('chm-open');
+    if (!isOpen() || overlayEl.classList.contains('chm-closing')) return;
     document.removeEventListener('keydown', onKeyDown);
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+        overlayEl.classList.remove('chm-open');
+        return;
+    }
+    // Плавно гасим, потом прячем (как fadeOut у Loom)
+    overlayEl.classList.add('chm-closing');
+    closeTimer = setTimeout(() => {
+        overlayEl.classList.remove('chm-open', 'chm-closing');
+    }, FADE_MS);
 }
 
 // ---------- Встраивание в таверну ----------

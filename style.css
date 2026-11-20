@@ -1,0 +1,547 @@
+/* Chimera — стили. Живём на теме таверны (SmartTheme-переменные), акцент — цвет цитат. */
+
+/* ---------- Подложка и окно (порт из Junket) ---------- */
+
+.chm-overlay {
+    /* Не inset: 0 — в мобильном Firefox <html> с translateZ(0) становится опорой для fixed
+       и окно уезжает за верх. Размеры от экрана; --chm-vh ставит index.js по visualViewport. */
+    position: fixed;
+    top: var(--chm-top, 0px);
+    left: 0;
+    z-index: 9999;
+    box-sizing: border-box;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    height: var(--chm-vh, 100dvh);
+    padding: 16px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.chm-overlay.chm-open {
+    display: flex;
+}
+
+.chm-window {
+    --chm-accent: var(--SmartThemeQuoteColor);
+    --chm-line: var(--SmartThemeBorderColor);
+    --chm-soft: color-mix(in srgb, var(--SmartThemeBodyColor) 6%, transparent);
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    width: min(1600px, 100%);
+    height: 100%;
+    overflow: hidden;
+    color: var(--SmartThemeBodyColor);
+    background: var(--SmartThemeBlurTintColor);
+    backdrop-filter: blur(var(--SmartThemeBlurStrength, 10px));
+    border: 1px solid var(--chm-line);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- Шапка ---------- */
+
+.chm-header {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--chm-line);
+}
+
+.chm-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.15em;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.chm-title i {
+    color: var(--chm-accent);
+}
+
+.chm-search {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    margin: 0;
+    padding: 0 10px;
+    background: var(--chm-soft);
+    border: 1px solid var(--chm-line);
+    border-radius: 999px;
+    cursor: text;
+}
+
+.chm-search:focus-within {
+    border-color: var(--chm-accent);
+}
+
+.chm-search i {
+    opacity: 0.55;
+}
+
+.chm-search-input {
+    flex: 1;
+    min-width: 0;
+    height: 34px;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    background: transparent;
+    border: none;
+    outline: none;
+    box-shadow: none;
+}
+
+.chm-kbd {
+    padding: 0 6px;
+    font-size: 0.75em;
+    line-height: 1.6;
+    opacity: 0.5;
+    border: 1px solid var(--chm-line);
+    border-radius: 4px;
+}
+
+.chm-icon-btn {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.15s, background 0.15s;
+}
+
+.chm-icon-btn:hover,
+.chm-icon-btn.chm-active {
+    opacity: 1;
+    background: rgba(127, 127, 127, 0.15);
+}
+
+.chm-icon-btn.chm-active {
+    color: var(--chm-accent);
+}
+
+/* ---------- Тело: две колонки ---------- */
+
+.chm-body {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.chm-main {
+    display: grid;
+    flex: 1;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+    min-height: 0;
+}
+
+.chm-col {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 14px;
+    overscroll-behavior: contain;
+}
+
+.chm-panel {
+    border-left: 1px solid var(--chm-line);
+}
+
+.chm-catalog {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.chm-card {
+    padding: 12px 14px;
+    background: var(--chm-soft);
+    border: 1px solid var(--chm-line);
+    border-radius: 12px;
+}
+
+.chm-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.chm-card-head i {
+    color: var(--chm-accent);
+}
+
+.chm-stub {
+    font-size: 0.85em;
+    opacity: 0.6;
+}
+
+.chm-stub-big {
+    padding: 48px 12px;
+    text-align: center;
+    border: 1px dashed var(--chm-line);
+    border-radius: 12px;
+}
+
+.chm-panel-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.chm-panel-title {
+    font-size: 0.78em;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.75;
+}
+
+.chm-panel-count {
+    color: var(--chm-accent);
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.chm-prompt-card {
+    margin-bottom: 10px;
+}
+
+.chm-mono-label {
+    margin-bottom: 6px;
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.72em;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    opacity: 0.55;
+}
+
+.chm-prompt-empty {
+    font-family: var(--monoFontFamily, monospace);
+    font-style: italic;
+    opacity: 0.5;
+}
+
+/* ---------- Экран настроек (поверх колонок) ---------- */
+
+.chm-settings-pane {
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+}
+
+.chm-overlay.chm-settings-on .chm-main {
+    display: none;
+}
+
+.chm-overlay.chm-settings-on .chm-settings-pane {
+    display: block;
+}
+
+.chm-settings-window {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.chm-viewer-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 640px;
+    margin: 0 auto 10px;
+}
+
+.chm-settings-heading {
+    font-weight: 700;
+}
+
+.chm-btn {
+    padding: 6px 12px;
+    color: inherit;
+    font: inherit;
+    background: rgba(127, 127, 127, 0.12);
+    border: 1px solid var(--chm-line);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.chm-btn:hover {
+    background: rgba(127, 127, 127, 0.22);
+}
+
+/* Категории настроек (как в Junket / Koma) */
+
+.chm-cat {
+    border-top: 1px solid var(--SmartThemeBorderColor);
+}
+
+.chm-cat-head {
+    appearance: none;
+    -webkit-appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    min-height: 40px;
+    padding: 10px 6px;
+    color: var(--SmartThemeQuoteColor);
+    font-size: 0.82em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.chm-cat-head[aria-expanded="true"] {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.chm-cat-head:focus-visible {
+    outline: 2px solid var(--SmartThemeQuoteColor);
+    outline-offset: -2px;
+}
+
+.chm-cat-chevron {
+    transition: transform 0.15s ease;
+}
+
+.chm-cat-head[aria-expanded="true"] .chm-cat-chevron {
+    transform: rotate(180deg);
+}
+
+.chm-cat-body {
+    padding: 0 4px 12px;
+}
+
+.chm-cat-body[hidden],
+.chm-settings [hidden] {
+    display: none;
+}
+
+/* ---------- Ящик расширений ---------- */
+
+.chm-settings {
+    padding: 4px 2px 8px;
+}
+
+.chm-drawer-hint {
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    opacity: 0.75;
+}
+
+.chm-settings .chm-open-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin: 0 0 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.chm-label {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 3px;
+    font-size: 0.85em;
+    opacity: 0.85;
+}
+
+.chm-set-hint {
+    margin-top: 3px;
+    font-size: 0.72em;
+    line-height: 1.4;
+    opacity: 0.55;
+}
+
+.chm-settings select.text_pole,
+.chm-settings input.text_pole,
+.chm-settings textarea.text_pole {
+    width: 100%;
+}
+
+/* ---------- Вкладки для телефона ---------- */
+
+.chm-mtabs {
+    display: none;
+    flex-shrink: 0;
+    gap: 6px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--chm-line);
+}
+
+.chm-mtab {
+    flex: 1;
+    padding: 7px 12px;
+    color: inherit;
+    font: inherit;
+    background: transparent;
+    border: 1px solid var(--chm-line);
+    border-radius: 999px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.chm-mtab.chm-active {
+    opacity: 1;
+    border-color: var(--chm-accent);
+    background: color-mix(in srgb, var(--chm-accent) 18%, transparent);
+}
+
+.chm-mtab-count {
+    margin-left: 4px;
+    font-size: 0.85em;
+    opacity: 0.7;
+}
+
+@media (max-width: 900px) {
+    .chm-overlay {
+        padding: 0;
+    }
+
+    .chm-window {
+        border-radius: 0;
+        border: none;
+    }
+
+    .chm-title span {
+        display: none;
+    }
+
+    .chm-kbd {
+        display: none;
+    }
+
+    .chm-mtabs {
+        display: flex;
+    }
+
+    .chm-overlay.chm-settings-on .chm-mtabs {
+        display: none;
+    }
+
+    .chm-main {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .chm-panel {
+        border-left: none;
+    }
+
+    .chm-overlay[data-mtab="catalog"] .chm-panel,
+    .chm-overlay[data-mtab="panel"] .chm-catalog {
+        display: none;
+    }
+}
+
+/* ---------- Кнопки запуска (порт из Junket) ---------- */
+
+.chm-launcher {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0 !important;
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    user-select: none;
+    border-radius: 8px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.chm-fab {
+    /* Под окном (9999) и под шапкой таверны (3005), но над чатом */
+    position: fixed;
+    z-index: 2999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    user-select: none;
+    background: var(--SmartThemeBlurTintColor);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+@media (hover: hover) {
+    .chm-fab:hover {
+        color: var(--SmartThemeQuoteColor);
+        background: color-mix(in srgb, var(--SmartThemeQuoteColor) 18%, var(--SmartThemeBlurTintColor));
+        border-color: color-mix(in srgb, var(--SmartThemeQuoteColor) 55%, transparent);
+    }
+}
+
+.chm-fab:focus-visible {
+    outline: 2px solid var(--SmartThemeQuoteColor);
+    outline-offset: 2px;
+}
+
+.chm-fab.chm-fab-dragging {
+    cursor: grabbing !important;
+    transition: none !important;
+    will-change: left, top;
+}
+
+.chm-launcher.chm-generating,
+.chm-fab.chm-generating {
+    color: var(--SmartThemeQuoteColor);
+    animation: chm-pulse 1.4s ease-in-out infinite;
+    will-change: transform;
+}
+
+@keyframes chm-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chm-launcher.chm-generating,
+    .chm-fab.chm-generating {
+        opacity: 0.8;
+        animation: none;
+        will-change: auto;
+    }
+}

@@ -1,0 +1,40 @@
+# ============================================================================
+#  Chimera — конфликты тегов
+# ============================================================================
+#  Конфликт не снимает теги: оба подсвечиваются жёлтым, под промтом видно,
+#  что с чем спорит. Рандом конфликтов не собирает.
+#
+#  Одна строка — одно правило:  левая сторона  <>  правая сторона
+#  Каждая сторона — через запятую:
+#    ears/no ears     — конкретный тег (категория/english, как в tags.txt)
+#    hair_color       — любой тег категории
+#    legs@a           — любой тег подгруппы (буква из строки «~» в tags.txt)
+#    -ears/no ears    — исключение: этот тег не считается
+#  Пары внутри одной категории «один» не нужны: там второй тег и так вытесняет первый.
+# ============================================================================
+
+# «Без …» против самого предмета
+ears/no ears <> ears, -ears/no ears
+horns/no horns <> horns, -horns/no horns
+wings/no wings <> wings, -wings/no wings
+headless/headless <> ears, horns, halo, mushroom_cap, hair_color, hair_length, haircut, eye_color, emotions
+
+# Без глаз — без цвета глаз, зрачков и взгляда
+eye_features/no eyes <> eye_color, pupils, sclera, gaze
+face_misc/faceless <> eye_color, pupils, emotions, smiles, mouth, emoticons
+mouth/no mouth <> smiles, emoticons, mouth/open mouth, mouth/parted lips, mouth/tongue, mouth/tongue out, mouth/fang, mouth/fangs, mouth/teeth
+
+# Закрытые глаза и прямой взгляд
+eye_state/closed eyes, eye_state/blinking <> gaze/looking at viewer, gaze/eye contact, gaze/staring, gaze/wide-eyed, gaze/unusually open eyes, gaze/rolling eyes, gaze/sideways glance, gaze/pleading eyes
+eye_state/blindfold <> gaze/looking at viewer, gaze/eye contact, gaze/staring
+
+# Лысина и причёски
+hair_length/bald, hair_length/bald female <> haircut, braids, buns, ponytails, bangs, crown, hair_texture, hair_pattern
+
+# Хвостатые расы без ног — против звериных ног и ног вообще
+race/mermaid, race/merman, race/lamia, race/scylla, race/selkie <> legs, figure/long legs, figure/slim legs, figure/thick thighs, figure/digitigrade
+race/centaur, race/centauroid <> legs@b
+
+# Кадр: несовместимая крупность
+view/full body <> view/upper body, view/cowboy shot, view/portrait
+view/upper body <> view/cowboy shot

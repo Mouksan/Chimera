@@ -1086,6 +1086,334 @@ button.chm-row-name:hover {
     text-decoration: line-through;
 }
 
+/* ---------- Этап 4а: кнопки рандома, шапки категорий, баны, конфликты ---------- */
+
+.chm-window {
+    --chm-warn: #e8b339;
+}
+
+.chm-random-card .chm-stub {
+    margin-bottom: 10px;
+}
+
+.chm-rnd-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chm-act {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    color: inherit;
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.78em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--chm-line);
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.chm-act:hover:not(:disabled) {
+    background: rgba(127, 127, 127, 0.14);
+}
+
+.chm-act:disabled {
+    cursor: default;
+    opacity: 0.35;
+}
+
+.chm-banlist-count {
+    color: var(--chm-accent);
+}
+
+/* Шапка категории: инструменты справа */
+
+.chm-catbox-tools {
+    display: flex;
+    flex-shrink: 0;
+    gap: 6px;
+}
+
+.chm-catbox-tools .chm-icon-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--chm-line);
+}
+
+.chm-catbox-tools .chm-icon-btn:disabled {
+    cursor: default;
+    opacity: 0.3;
+}
+
+.chm-catbox.chm-cat-banned .chm-catbox-title {
+    text-decoration: line-through;
+    opacity: 0.55;
+}
+
+/* Подгруппа с кнопкой бана: «[ЗВЕРИНЫЕ | 🚫]» */
+
+.chm-subwrap {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid var(--chm-line);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.chm-subwrap .chm-sub {
+    border: none;
+    border-radius: 0;
+}
+
+.chm-sub-ban {
+    padding: 0 7px;
+    color: inherit;
+    font-size: 0.7em;
+    background: transparent;
+    border: none;
+    border-left: 1px solid var(--chm-line);
+    cursor: pointer;
+    opacity: 0.45;
+}
+
+.chm-sub-ban:hover {
+    opacity: 1;
+}
+
+.chm-subwrap.chm-sub-banned .chm-sub {
+    text-decoration: line-through;
+    opacity: 0.45;
+}
+
+.chm-subwrap.chm-sub-banned .chm-sub-ban {
+    color: var(--chm-accent);
+    opacity: 1;
+}
+
+/* Тег: долгое нажатие на телефоне не должно выделять текст */
+
+.chm-tag {
+    -webkit-touch-callout: none;
+    user-select: none;
+}
+
+/* Конфликт — жёлтым (редкие теги нарочно не жёлтые) */
+
+.chm-tag.chm-conflict,
+.chm-tag.chm-on.chm-conflict {
+    border-color: var(--chm-warn);
+    background: color-mix(in srgb, var(--chm-warn) 18%, transparent);
+}
+
+.chm-row.chm-conflict {
+    border-color: var(--chm-warn);
+    box-shadow: inset 3px 0 0 var(--chm-warn);
+}
+
+.chm-conflicts {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 10px;
+    color: var(--chm-warn);
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.82em;
+    border-top: 1px dashed color-mix(in srgb, var(--chm-warn) 45%, transparent);
+}
+
+.chm-conflicts[hidden] {
+    display: none;
+}
+
+.chm-conflicts > i {
+    margin-top: 3px;
+}
+
+.chm-cf-list {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.chm-cf-x {
+    opacity: 0.7;
+}
+
+.chm-cf-more {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    color: var(--chm-warn);
+    font: inherit;
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--chm-warn) 50%, transparent);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+/* ---------- Полоска внизу окна ---------- */
+
+.chm-notice {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    max-width: calc(100% - 32px);
+    padding: 10px 12px 10px 18px;
+    background: var(--SmartThemeBlurTintColor);
+    backdrop-filter: blur(var(--SmartThemeBlurStrength, 10px));
+    border: 1px solid var(--chm-line);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    transform: translateX(-50%);
+    animation: chm-fade-in 0.15s ease-out;
+}
+
+.chm-notice[hidden] {
+    display: none;
+}
+
+.chm-notice-text {
+    font-size: 0.92em;
+}
+
+.chm-notice-undo {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    color: var(--SmartThemeBlurTintColor, #111);
+    font: inherit;
+    font-size: 0.85em;
+    font-weight: 700;
+    background: var(--chm-accent);
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+/* ---------- Окошко поверх окна (бан-лист) ---------- */
+
+.chm-modal-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.5);
+    animation: chm-fade-in 0.15s ease-out;
+}
+
+.chm-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(620px, 100%);
+    max-height: 100%;
+    padding: 16px 18px;
+    background: var(--SmartThemeBlurTintColor);
+    backdrop-filter: blur(var(--SmartThemeBlurStrength, 10px));
+    border: 1px solid var(--chm-line);
+    border-radius: 16px;
+    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.5);
+}
+
+.chm-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chm-modal-title {
+    font-size: 1.1em;
+    font-weight: 700;
+}
+
+.chm-modal-title i,
+.chm-modal-count {
+    color: var(--chm-accent);
+}
+
+.chm-bl-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 60px;
+    overflow-y: auto;
+}
+
+.chm-bl-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.chm-bl-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--chm-soft);
+    border: 1px solid var(--chm-line);
+    border-radius: 10px;
+}
+
+.chm-bl-title {
+    font-weight: 700;
+}
+
+.chm-bl-note {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.76em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.55;
+}
+
+.chm-bl-back {
+    flex-shrink: 0;
+    font-size: 0.82em;
+}
+
+.chm-modal-foot {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.chm-bl-clear:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+@media (max-width: 900px) {
+    .chm-catbox-tools {
+        gap: 4px;
+    }
+
+    .chm-catbox-tools .chm-icon-btn {
+        width: 28px;
+        height: 28px;
+    }
+
+    .chm-bl-note {
+        display: none;
+    }
+}
+
 /* ---------- Экран настроек (поверх колонок) ---------- */
 
 .chm-settings-pane {

@@ -2,6 +2,7 @@
 // тумблеры, промт, негатив, свои теги, копирование и список тегов с весами, цветом, 📌 🚫 ✕.
 
 import { getSettings, saveSettings, escapeHtml, TOAST_TITLE } from './store.js';
+import { findConflicts } from './conflicts.js';
 import {
     buildPrompt, formatWeight, isPart, isShadeable, isMulti, MULTI_MAX,
     PART_COLORS, SHADES, colorLabel, colorCss,
@@ -52,6 +53,7 @@ function shellHtml() {
             <div class="chm-mono-label">prompt.txt</div>
             <div class="chm-switches">${toggles}</div>
             <div class="chm-prompt-text"></div>
+            <div class="chm-conflicts" hidden></div>
         </div>
 
         <details class="chm-fold chm-neg-fold">
@@ -158,20 +160,20 @@ function rowHtml(row) {
     const open = openPalettes.has(tag.id);
 
     return `
-        <div class="chm-row${b.pinned ? ' chm-pinned' : ''}" data-id="${escapeHtml(tag.id)}">
+        <div class="chm-row${b.pinned ? ' chm-pinned' : ''}${conflicted.has(tag.id) ? ' chm-conflict' : ''}" data-id="${escapeHtml(tag.id)}">
             <div class="chm-row-top">
                 ${dot}${multi}
                 <button type="button" class="chm-row-name" title="Показать в каталоге">${shadeOnly}${escapeHtml(tag.ru)}</button>
                 <span class="chm-row-en" title="${escapeHtml(row.en)}">${escapeHtml(row.en)}</span>
                 <span class="chm-row-tools">
-                    ${row.isGender ? '' : `<span class="chm-row-w">×${formatWeight(weight)}</span>`}
+                    ${row.noWeight ? '' : `<span class="chm-row-w">×${formatWeight(weight)}</span>`}
                     ${colorable ? `<button type="button" class="chm-row-btn chm-pal-btn${open ? ' chm-active' : ''}" title="Цвет"><i class="fa-solid fa-palette"></i></button>` : ''}
                     <button type="button" class="chm-row-btn chm-pin${b.pinned ? ' chm-active' : ''}" title="${b.pinned ? 'Открепить' : 'Закрепить — рандом не тронет'}"><i class="fa-solid fa-thumbtack"></i></button>
                     <button type="button" class="chm-row-btn chm-ban" title="В бан — убрать и больше не предлагать"><i class="fa-solid fa-ban"></i></button>
                     <button type="button" class="chm-row-btn chm-remove" title="Убрать"><i class="fa-solid fa-xmark"></i></button>
                 </span>
             </div>
-            ${row.isGender ? '' : `<input type="range" class="chm-w" min="${W_MIN}" max="${W_MAX}" step="${W_STEP}" value="${weight}" aria-label="Вес тега">`}
+            ${row.noWeight ? '' : `<input type="range" class="chm-w" min="${W_MIN}" max="${W_MAX}" step="${W_STEP}" value="${weight}" aria-label="Вес тега">`}
             ${open && colorable ? paletteHtml(row) : ''}
         </div>`;
 }
@@ -179,6 +181,19 @@ function rowHtml(row) {
 // ---------- Рендер ----------
 
 let last = null;
+let conflicted = new Set();
+let conflictsExpanded = false;
+
+function conflictsHtml(pairs) {
+    if (!pairs.length) return '';
+    const name = (id) => escapeHtml(db.tags.get(id)?.ru || id);
+    const pair = ([a, b]) => `<span class="chm-cf-pair">${name(a)} <span class="chm-cf-x">⟷</span> ${name(b)}</span>`;
+    const shown = conflictsExpanded ? pairs : pairs.slice(0, 1);
+    const more = pairs.length > 1
+        ? `<button type="button" class="chm-cf-more">${conflictsExpanded ? 'Свернуть' : `Разобрать · ещё ${pairs.length - 1}`}</button>`
+        : '';
+    return `<i class="fa-solid fa-triangle-exclamation"></i><div class="chm-cf-list">${shown.map(pair).join('')}</div>${more}`;
+}
 
 /** Перерисовать промт и список тегов. */
 export function renderPanel() {
@@ -188,6 +203,13 @@ export function renderPanel() {
 
     root.querySelector('.chm-panel-count').textContent = `${last.count} тег.`;
     root.querySelector('.chm-prompt-text').innerHTML = promptHtml(last);
+
+    const pairs = findConflicts(s.build.map((b) => b.id));
+    conflicted = new Set(pairs.flat());
+    if (pairs.length < 2) conflictsExpanded = false;
+    const cf = root.querySelector('.chm-conflicts');
+    cf.innerHTML = conflictsHtml(pairs);
+    cf.hidden = !pairs.length;
 
     const note = root.querySelector('.chm-neg-note');
     note.textContent = last.negDropped
@@ -243,6 +265,11 @@ function findB(id) {
 function onClick(e) {
     const s = getSettings();
 
+    if (e.target.closest('.chm-cf-more')) {
+        conflictsExpanded = !conflictsExpanded;
+        renderPanel();
+        return;
+    }
     if (e.target.closest('.chm-copy-btn')) {
         copyText(buildPrompt(db, s).positive, 'промт');
         return;
@@ -288,12 +315,8 @@ function onClick(e) {
         return;
     }
     if (e.target.closest('.chm-ban')) {
-        s.build = s.build.filter((x) => x.id !== id);
-        if (!s.banned.includes(id)) s.banned.push(id);
         openPalettes.delete(id);
-        saveSettings();
-        hooks.onBan(id);
-        hooks.onChange(id);
+        hooks.onBan(id);   // убирает из сборки, банит и показывает «Отменить»
         return;
     }
     if (e.target.closest('.chm-pin')) {

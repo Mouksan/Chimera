@@ -209,7 +209,9 @@ export function buildPrompt(db, s = getSettings()) {
         }
 
         const en = genderedEn(tag, gender);
-        const w = Number(b.weight) || 1;
+        // Пол и раса веса не получают (как на сайте)
+        const noWeight = Boolean(tag.gender) || tag.catId === 'race';
+        const w = noWeight ? 1 : (Number(b.weight) || 1);
         const extra = [];
         let main = en;
 
@@ -234,7 +236,7 @@ export function buildPrompt(db, s = getSettings()) {
         }
 
         const text = [weighted(main, w, toggles), ...extra].join(', ');
-        rows.push({ kind: 'tag', id: tag.id, tag, b, en: main, text, plain: [main, ...extra], weight: w, isGender: Boolean(tag.gender) });
+        rows.push({ kind: 'tag', id: tag.id, tag, b, en: main, text, plain: [main, ...extra], weight: w, noWeight });
     }
 
     // Пустую сборку одеждой не украшаем

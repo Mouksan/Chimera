@@ -1,6 +1,8 @@
 // Chimera — конструктор персонажа по тегам
 // Этап 1: каркас — окно во весь экран в две колонки, кнопки запуска, настройки под шестерёнкой
 // Этап 2: каталог тегов — разделы, категории, подгруппы, поиск, выбор «один / мульти»
+// Этап 3: сборка промта и правая колонка
+// Этап 4а: баны, закрепы категорий, кубики, сброс и откат, бан-лист, конфликты
 
 import { getSettings, saveSettings, escapeHtml, TOAST_TITLE } from './store.js';
 import { addSettingsDrawer, settingsPaneHtml, bindSettingsPane } from './settings.js';
@@ -9,6 +11,12 @@ import { loadTags } from './data.js';
 import { initCatalog, bindGlobalSearch, refreshAllSelection, renderCatalog, revealTag } from './catalog.js';
 import { initPanel, renderPanel } from './panel.js';
 import { currentGender, isIncompatible, triggeredGenerics } from './builder.js';
+import { loadConflicts } from './conflicts.js';
+import { banKeyValid } from './bans.js';
+import { initBanList, openBanList, closeBanList, isBanListOpen } from './banlist.js';
+import { resetBuild, unpinAll, undo, canUndo, setHistoryListener } from './random.js';
+import { banTagWithUndo } from './catalog.js';
+import { toast } from './notice.js';
 
 // ---------- Окно ----------
 
@@ -45,7 +53,13 @@ function buildWindow() {
                     <section class="chm-col chm-catalog" data-col="catalog">
                         <div class="chm-card chm-random-card">
                             <div class="chm-card-head"><i class="fa-solid fa-dice"></i> Рандом и пресеты</div>
-                            <div class="chm-stub">Режимы, «рандом без…» и пресеты-архетипы появятся на этапе 4.</div>
+                            <div class="chm-stub">Режимы, «Рандом всего» и пресеты-архетипы — следующим заходом. Пока работают 🎲 в шапках категорий.</div>
+                            <div class="chm-rnd-actions">
+                                <button type="button" class="chm-act chm-act-reset" title="Убрать всё незакреплённое"><i class="fa-solid fa-rotate-left"></i> Сброс</button>
+                                <button type="button" class="chm-act chm-act-undo" title="Откатить последний рандом или сброс" disabled><i class="fa-solid fa-clock-rotate-left"></i></button>
+                                <button type="button" class="chm-act chm-act-unpin" title="Открепить все теги"><i class="fa-solid fa-thumbtack"></i> Снять закрепы</button>
+                                <button type="button" class="chm-act chm-act-banlist" title="Всё, что не предлагает рандом"><i class="fa-solid fa-ban"></i> Бан-лист <span class="chm-banlist-count"></span></button>
+                            </div>
                         </div>
                         <div class="chm-catalog-list">
                             <div class="chm-stub chm-stub-big"><i class="fa-solid fa-spinner fa-spin"></i> Загружаю теги…</div>
@@ -101,15 +115,18 @@ async function ensureCatalog() {
         tagDb = db;
         dropUnknownTags(db);
         lastGender = currentGender(db);
-        initCatalog(list, db, () => onBuildChange());
+        await loadConflicts(db);
+        initCatalog(list, db, (id, opts) => onBuildChange(opts));
         initPanel(overlayEl.querySelector('.chm-panel'), db, {
             onChange: (id, opts) => onBuildChange(opts),
             onReveal: (id) => {
                 toCatalogTab();
                 revealTag(id);
             },
-            onBan: () => {},
+            onBan: (id) => banTagWithUndo(id),
         });
+        initBanList(db, () => onBuildChange({ bans: true }));
+        bindRandomActions();
         bindGlobalSearch(
             overlayEl.querySelector('.chm-search-input'),
             overlayEl.querySelector('.chm-search-results'),
@@ -129,12 +146,12 @@ async function ensureCatalog() {
 let tagDb = null;
 let lastGender = null;
 
-/** Если тег удалили или переименовали в tags.txt — молча выкинуть его из сборки и бана. */
+/** Если тег, подгруппу или категорию удалили в tags.txt — молча выкинуть из сборки и бана. */
 function dropUnknownTags(db) {
     const s = getSettings();
     const before = s.build.length + s.banned.length;
     s.build = s.build.filter((b) => db.tags.has(b.id));
-    s.banned = s.banned.filter((id) => db.tags.has(id));
+    s.banned = s.banned.filter((key) => banKeyValid(db, key));
     if (s.build.length + s.banned.length !== before) saveSettings();
 }
 
@@ -145,9 +162,37 @@ function toCatalogTab() {
 }
 
 function updateCounts() {
-    const n = getSettings().build.length;
+    const s = getSettings();
     const mcount = overlayEl?.querySelector('.chm-mtab-count');
-    if (mcount) mcount.textContent = String(n);
+    if (mcount) mcount.textContent = String(s.build.length);
+    const bl = overlayEl?.querySelector('.chm-banlist-count');
+    if (bl) bl.textContent = s.banned.length ? String(s.banned.length) : '';
+    const undoBtn = overlayEl?.querySelector('.chm-act-undo');
+    if (undoBtn) undoBtn.disabled = !canUndo();
+    const unpin = overlayEl?.querySelector('.chm-act-unpin');
+    if (unpin) unpin.disabled = !s.build.some((b) => b.pinned);
+    const reset = overlayEl?.querySelector('.chm-act-reset');
+    if (reset) reset.disabled = !s.build.some((b) => !b.pinned);
+}
+
+/** Кнопки под рандомом: Сброс, ⟲, Снять закрепы, Бан-лист. */
+function bindRandomActions() {
+    const card = overlayEl.querySelector('.chm-random-card');
+    setHistoryListener(updateCounts);
+    card.addEventListener('click', (e) => {
+        if (e.target.closest('.chm-act-reset')) {
+            if (resetBuild()) {
+                onBuildChange({ random: true });
+                toast('Сброшено — закреплённое осталось. ⟲ вернёт как было');
+            }
+        } else if (e.target.closest('.chm-act-undo')) {
+            if (undo()) onBuildChange({ random: true });
+        } else if (e.target.closest('.chm-act-unpin')) {
+            if (unpinAll()) onBuildChange({ pins: true });
+        } else if (e.target.closest('.chm-act-banlist')) {
+            openBanList();
+        }
+    });
 }
 
 /**
@@ -232,6 +277,10 @@ function onKeyDown(e) {
     if (e.key === 'Escape') {
         // Если поверх открыт попап таверны — пусть он сам обработает Esc
         if (document.querySelector('dialog[open]')) return;
+        if (isBanListOpen()) {
+            closeBanList();
+            return;
+        }
         if (settingsOpen) {
             closeSettings();
             return;

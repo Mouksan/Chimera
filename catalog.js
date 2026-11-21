@@ -4,13 +4,17 @@
 import { getSettings, saveSettings, escapeHtml } from './store.js';
 import { swatchCss, normalizeQuery } from './data.js';
 import { currentGender, genderedEn, isIncompatible } from './builder.js';
+import { isBanned, isDirectBan, subKey, catKey, toggleBanKey, addBan, removeBan } from './bans.js';
+import { findConflicts } from './conflicts.js';
+import { rollCategory, togglePinCategory } from './random.js';
+import { showUndo, toast } from './notice.js';
 
 const SEARCH_MIN = 18;       // у категорий от стольких тегов есть свой поиск (как на сайте)
 const GLOBAL_LIMIT = 40;     // сколько результатов показывать в общем поиске
 
 let db = null;               // { sections, cats, tags }
 let rootEl = null;           // .chm-catalog-list
-let onChange = () => {};
+let onChange = () => {};    // (id?, opts?) — сборка поменялась
 const view = new Map();      // catId → { sub: 'all' | key, q: '', searchOpen: bool }
 
 // ---------- Состояние ----------
@@ -33,10 +37,6 @@ export function selectedIds() {
     return new Set(getSettings().build.map((b) => b.id));
 }
 
-function countSelectedIn(cat, selected = selectedIds()) {
-    return cat.tags.reduce((n, t) => n + (selected.has(t.id) ? 1 : 0), 0);
-}
-
 // ---------- Выбор тегов ----------
 
 /** Клик по тегу: выбрать или снять. В категории «один» новый тег вытесняет старый. */
@@ -44,7 +44,8 @@ export function toggleTag(id) {
     const tag = db?.tags.get(id);
     if (!tag) return;
     const s = getSettings();
-    // Клик по забаненному тегу снимает бан и сразу выбирает тег
+    // Клик по забаненному руками тегу снимает его бан и сразу выбирает.
+    // Бан подгруппы или категории остаётся: он про рандом, а руками выбрать можно всегда
     const banIdx = s.banned.indexOf(id);
     if (banIdx >= 0) s.banned.splice(banIdx, 1);
     const idx = s.build.findIndex((b) => b.id === id);
@@ -66,19 +67,24 @@ export function toggleTag(id) {
 /** Перекрасить выбранные теги в категории (или во всех открытых). */
 function refreshSelection(catId) {
     if (!rootEl) return;
-    const selected = selectedIds();
-    const banned = new Set(getSettings().banned);
+    const ctx = renderCtx();
+    const selected = ctx.selected;
     const cats = catId ? [db.cats.get(catId)] : [...db.cats.values()];
     for (const cat of cats) {
         const box = rootEl.querySelector(`.chm-catbox[data-cat="${cat.id}"]`);
         if (!box) continue;
         box.querySelectorAll('.chm-tag').forEach((el) => {
+            const tag = db.tags.get(el.dataset.id);
             const on = selected.has(el.dataset.id);
             el.classList.toggle('chm-on', on);
-            el.classList.toggle('chm-banned', banned.has(el.dataset.id));
+            el.classList.toggle('chm-banned', Boolean(tag) && isBanned(tag, ctx.banned));
+            el.classList.toggle('chm-conflict', ctx.conflicted.has(el.dataset.id));
             el.setAttribute('aria-pressed', String(on));
         });
-        renderCatCount(box, cat, selected);
+        box.querySelectorAll('.chm-subwrap').forEach((w) => {
+            w.classList.toggle('chm-sub-banned', ctx.banned.has(subKey(cat.id, w.dataset.sub)));
+        });
+        renderCatHead(box, cat, ctx);
     }
 }
 
@@ -90,14 +96,18 @@ export function refreshAllSelection() {
 
 function tagHtml(tag, selected, ctx = renderCtx()) {
     const on = selected.has(tag.id);
-    const banned = ctx.banned.has(tag.id);
+    const banned = isBanned(tag, ctx.banned);
+    const direct = isDirectBan(tag, ctx.banned);
+    const conflict = ctx.conflicted.has(tag.id);
     const swatch = swatchCss(tag.swatch);
     const dot = swatch ? `<span class="chm-dot" style="background:${escapeHtml(swatch)}"></span>` : '';
     const en = genderedEn(tag, ctx.gender);
     // У цветных кружков английский не показываем (как на сайте); у эмотиконов, где ru = en, — тоже
     const showEn = !swatch && tag.ru !== tag.en;
-    const title = banned ? `${en} — в бане, клик снимет бан` : en;
-    return `<button type="button" class="chm-tag${on ? ' chm-on' : ''}${tag.rare ? ' chm-rare' : ''}${banned ? ' chm-banned' : ''}" data-id="${escapeHtml(tag.id)}" aria-pressed="${on}" title="${escapeHtml(title)}">`
+    let title = `${en} · правый клик — в бан`;
+    if (direct) title = `${en} — в бане, клик выберет и снимет бан`;
+    else if (banned) title = `${en} — в бане вместе с подгруппой или категорией; руками выбрать можно`;
+    return `<button type="button" class="chm-tag${on ? ' chm-on' : ''}${tag.rare ? ' chm-rare' : ''}${banned ? ' chm-banned' : ''}${conflict ? ' chm-conflict' : ''}" data-id="${escapeHtml(tag.id)}" aria-pressed="${on}" title="${escapeHtml(title)}">`
         + dot
         + `<span class="chm-tag-ru">${escapeHtml(tag.ru)}</span>`
         + (showEn ? `<span class="chm-tag-en">${escapeHtml(en)}</span>` : '')
@@ -108,10 +118,14 @@ function tagHtml(tag, selected, ctx = renderCtx()) {
 /** Общее для отрисовки: пол, баны, показывать ли чужой пол. */
 function renderCtx() {
     const s = getSettings();
+    const selected = new Set(s.build.map((b) => b.id));
+    const conflicted = new Set(findConflicts(selected).flat());
     return {
         gender: db ? currentGender(db, s.build) : null,
         banned: new Set(s.banned),
         showOther: s.toggles.otherGender,
+        selected,
+        conflicted,
     };
 }
 
@@ -131,12 +145,30 @@ function catHidden(cat, ctx) {
     return !ctx.showOther && cat.tags.every((t) => isIncompatible(t, ctx.gender));
 }
 
-function renderCatCount(box, cat, selected = selectedIds()) {
-    const el = box.querySelector('.chm-catbox-count');
-    if (!el) return;
-    const n = countSelectedIn(cat, selected);
-    el.textContent = n ? `${n} / ${cat.tags.length}` : String(cat.tags.length);
-    el.classList.toggle('chm-has', n > 0);
+/** Шапка категории: счётчик, состояние 📌 и 🚫. */
+function renderCatHead(box, cat, ctx = renderCtx()) {
+    const s = getSettings();
+    const inCat = s.build.filter((b) => db.tags.get(b.id)?.catId === cat.id);
+    const n = inCat.length;
+    const count = box.querySelector('.chm-catbox-count');
+    if (count) {
+        count.textContent = n ? `${n} / ${cat.tags.length}` : String(cat.tags.length);
+        count.classList.toggle('chm-has', n > 0);
+    }
+    const allPinned = n > 0 && inCat.every((b) => b.pinned);
+    const pin = box.querySelector('.chm-cat-pin');
+    if (pin) {
+        pin.classList.toggle('chm-active', allPinned);
+        pin.disabled = n === 0;
+        pin.title = n === 0 ? 'Закрепить выбранное — сначала выбери что-нибудь' : (allPinned ? 'Открепить всё в категории' : 'Закрепить всё выбранное в категории');
+    }
+    const catBanned = ctx.banned.has(catKey(cat.id));
+    box.classList.toggle('chm-cat-banned', catBanned);
+    const ban = box.querySelector('.chm-cat-ban');
+    if (ban) {
+        ban.classList.toggle('chm-active', catBanned);
+        ban.title = catBanned ? 'Вернуть категорию в рандом' : 'Забанить категорию — рандом её не тронет';
+    }
 }
 
 function catBodyHtml(cat) {
@@ -149,7 +181,13 @@ function catBodyHtml(cat) {
     const subs = cat.subs.length
         ? `<div class="chm-subs">`
             + `<button type="button" class="chm-sub${v.sub === 'all' ? ' chm-active' : ''}" data-sub="all">Все</button>`
-            + cat.subs.map((s) => `<button type="button" class="chm-sub${v.sub === s.key ? ' chm-active' : ''}" data-sub="${escapeHtml(s.key)}">${escapeHtml(s.title)}</button>`).join('')
+            + cat.subs.map((s) => {
+                const subBanned = ctx.banned.has(subKey(cat.id, s.key));
+                return `<span class="chm-subwrap${subBanned ? ' chm-sub-banned' : ''}" data-sub="${escapeHtml(s.key)}">`
+                    + `<button type="button" class="chm-sub${v.sub === s.key ? ' chm-active' : ''}" data-sub="${escapeHtml(s.key)}">${escapeHtml(s.title)}</button>`
+                    + `<button type="button" class="chm-sub-ban" title="${subBanned ? 'Вернуть подгруппу в рандом' : 'Забанить подгруппу целиком'}"><i class="fa-solid fa-ban"></i></button>`
+                    + '</span>';
+            }).join('')
             + `</div>`
         : '';
     const list = visibleTags(cat, ctx);
@@ -172,7 +210,12 @@ function catHtml(cat, ctx = renderCtx()) {
                     <span class="chm-catbox-mode">· ${cat.mode === 'one' ? 'один' : 'мультивыбор'}</span>
                 </button>
                 <span class="chm-catbox-count"></span>
-                ${canSearch ? '<button type="button" class="chm-icon-btn chm-catbox-searchbtn" title="Искать в категории"><i class="fa-solid fa-magnifying-glass"></i></button>' : ''}
+                <span class="chm-catbox-tools">
+                    ${canSearch ? '<button type="button" class="chm-icon-btn chm-catbox-searchbtn" title="Искать в категории"><i class="fa-solid fa-magnifying-glass"></i></button>' : ''}
+                    <button type="button" class="chm-icon-btn chm-cat-ban"><i class="fa-solid fa-ban"></i></button>
+                    <button type="button" class="chm-icon-btn chm-cat-pin"><i class="fa-solid fa-thumbtack"></i></button>
+                    <button type="button" class="chm-icon-btn chm-cat-dice" title="Случайный тег в этой категории"><i class="fa-solid fa-dice"></i></button>
+                </span>
             </div>
             <div class="chm-catbox-body">${open ? catBodyHtml(cat) : ''}</div>
         </div>`;
@@ -211,7 +254,7 @@ export function renderCatalog() {
             <button type="button" class="chm-btn chm-collapse-all"></button>
         </div>
         ${db.sections.map((sec) => sectionHtml(sec, ctx)).join('')}`;
-    rootEl.querySelectorAll('.chm-catbox').forEach((box) => renderCatCount(box, db.cats.get(box.dataset.cat)));
+    rootEl.querySelectorAll('.chm-catbox').forEach((box) => renderCatHead(box, db.cats.get(box.dataset.cat), ctx));
     renderCollapseLabel();
     if (scroller) scroller.scrollTop = top;
 }
@@ -279,6 +322,51 @@ function onClick(e) {
     if (!box) return;
     const cat = db.cats.get(box.dataset.cat);
 
+    if (e.target.closest('.chm-cat-dice')) {
+        const res = rollCategory(db, cat.id);
+        if (!res.ok) {
+            toast(res.reason);
+            return;
+        }
+        refreshSelection(cat.id);
+        onChange(res.id, { random: true });
+        return;
+    }
+
+    if (e.target.closest('.chm-cat-pin')) {
+        if (togglePinCategory(db, cat.id) === null) return;
+        renderCatHead(box, cat);
+        onChange(null, { pins: true });
+        return;
+    }
+
+    if (e.target.closest('.chm-cat-ban')) {
+        const on = toggleBanKey(catKey(cat.id));
+        refreshSelection(cat.id);
+        onChange(null, { bans: true });
+        if (on) showUndo(`«${cat.title}» в бане`, () => {
+            removeBan(catKey(cat.id));
+            refreshSelection(cat.id);
+            onChange(null, { bans: true });
+        });
+        return;
+    }
+
+    const subBan = e.target.closest('.chm-sub-ban');
+    if (subBan) {
+        const key = subBan.closest('.chm-subwrap').dataset.sub;
+        const title = cat.subs.find((x) => x.key === key)?.title || key;
+        const on = toggleBanKey(subKey(cat.id, key));
+        refreshSelection(cat.id);
+        onChange(null, { bans: true });
+        if (on) showUndo(`«${title}» в бане`, () => {
+            removeBan(subKey(cat.id, key));
+            refreshSelection(cat.id);
+            onChange(null, { bans: true });
+        });
+        return;
+    }
+
     if (e.target.closest('.chm-catbox-toggle')) {
         const open = !isCatOpen(cat);
         getSettings().catOpen[cat.id] = open;
@@ -310,6 +398,41 @@ function onClick(e) {
         viewOf(cat.id).sub = subBtn.dataset.sub;
         renderCatBody(cat);
     }
+}
+
+/** Правый клик (на телефоне — долгое нажатие) по тегу: в бан, с полоской «Отменить». */
+function onContextMenu(e) {
+    const tagBtn = e.target.closest('.chm-tag');
+    if (!tagBtn) return;
+    e.preventDefault();
+    banTagWithUndo(tagBtn.dataset.id);
+}
+
+/** Забанить тег (и убрать из сборки, если выбран) — с полоской «Отменить». */
+export function banTagWithUndo(id) {
+    const tag = db?.tags.get(id);
+    if (!tag) return;
+    const s = getSettings();
+    if (s.banned.includes(id)) {
+        // Уже в бане — правый клик возвращает
+        removeBan(id);
+        refreshSelection(tag.catId);
+        onChange(id, { bans: true });
+        toast(`«${tag.ru}» снова в рандоме`);
+        return;
+    }
+    const prevBuild = structuredClone(s.build);
+    s.build = s.build.filter((b) => b.id !== id);
+    addBan(id);
+    refreshSelection(tag.catId);
+    onChange(id, { bans: true });
+    showUndo(`«${tag.ru}» в бане`, () => {
+        removeBan(id);
+        getSettings().build = prevBuild;
+        saveSettings();
+        refreshSelection(tag.catId);
+        onChange(id, { bans: true });
+    });
 }
 
 function onInput(e) {
@@ -506,6 +629,7 @@ export function initCatalog(root, database, changed) {
     onChange = changed || (() => {});
     root.addEventListener('click', onClick);
     root.addEventListener('input', onInput);
+    root.addEventListener('contextmenu', onContextMenu);
     renderCatalog();
 }
 

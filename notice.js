@@ -51,7 +51,7 @@ export function showUndo(text, onUndo) {
     }, { once: true });
 }
 
-/** Короткая подсказка без кнопок. */
-export function toast(text) {
-    show(`<span class="chm-notice-text">${escapeHtml(text)}</span>`, TOAST_MS);
+/** Короткая подсказка без кнопок. ms — сколько держать (ошибки провайдера держим дольше). */
+export function toast(text, ms = TOAST_MS) {
+    show(`<span class="chm-notice-text">${escapeHtml(text)}</span>`, ms);
 }

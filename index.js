@@ -4,13 +4,15 @@
 // Этап 3: сборка промта и правая колонка
 // Этап 4а: баны, закрепы категорий, кубики, сброс и откат, бан-лист, конфликты
 // Этап 4б: режимы, «Рандом всего» / «Просто рандом», пресеты, «Рандом без…», умные правила, палитра
+// Этап 5: генерация превью (NovelAI / наистера), стили, галерея «Мои превью»
 
 import { getSettings, saveSettings, escapeHtml, TOAST_TITLE } from './store.js';
-import { addSettingsDrawer, settingsPaneHtml, bindSettingsPane } from './settings.js';
+import { addSettingsDrawer, settingsPaneHtml, bindSettingsPane, setStylesListener, closeSettingsModal } from './settings.js';
 import { initLaunchers } from './launcher.js';
 import { loadTags } from './data.js';
 import { initCatalog, bindGlobalSearch, refreshAllSelection, renderCatalog, revealTag } from './catalog.js';
-import { initPanel, renderPanel } from './panel.js';
+import { initPanel, renderPanel, currentPrompt } from './panel.js';
+import { initPreview, refreshStyleSelect, isLightboxOpen, closeLightbox } from './preview.js';
 import { currentGender, isIncompatible, triggeredGenerics } from './builder.js';
 import { loadConflicts } from './conflicts.js';
 import { banKeyValid } from './bans.js';
@@ -120,6 +122,11 @@ async function ensureCatalog() {
                 revealTag(id);
             },
             onBan: (id) => banTagWithUndo(id),
+        });
+        initPreview(overlayEl.querySelector('.chm-gen'), currentPrompt);
+        setStylesListener(() => {
+            refreshStyleSelect();
+            renderPanel();
         });
         initBanList(db, () => onBuildChange({ bans: true }));
         checkPresetIds(db);
@@ -275,10 +282,15 @@ function onKeyDown(e) {
     if (e.key === 'Escape') {
         // Если поверх открыт попап таверны — пусть он сам обработает Esc
         if (document.querySelector('dialog[open]')) return;
+        if (isLightboxOpen()) {
+            closeLightbox();
+            return;
+        }
         if (isBanListOpen()) {
             closeBanList();
             return;
         }
+        if (closeSettingsModal()) return;
         if (settingsOpen) {
             closeSettings();
             return;

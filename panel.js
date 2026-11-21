@@ -3,6 +3,7 @@
 
 import { getSettings, saveSettings, escapeHtml, TOAST_TITLE } from './store.js';
 import { findConflicts } from './conflicts.js';
+import { activeStyle } from './gen.js';
 import {
     buildPrompt, formatWeight, isPart, isShadeable, isMulti, MULTI_MAX,
     PART_COLORS, SHADES, colorLabel, colorCss,
@@ -78,6 +79,8 @@ function shellHtml() {
         </details>
 
         <button type="button" class="chm-copy-btn"><i class="fa-regular fa-copy"></i> Скопировать промт</button>
+
+        <div class="chm-gen"></div>
 
         <div class="chm-rows-head">
             <span class="chm-mono-label">теги</span>
@@ -212,10 +215,12 @@ export function renderPanel() {
     cf.hidden = !pairs.length;
 
     const note = root.querySelector('.chm-neg-note');
-    note.textContent = last.negDropped
-        ? `// ${last.negDropped} из негатива уже выбраны в плюс — их не отправим`
-        : (last.count ? '' : '');
-    note.hidden = !note.textContent;
+    const style = activeStyle();
+    const lines = [];
+    if (last.negDropped) lines.push(`// ${last.negDropped} из негатива уже выбраны в плюс — их не отправим`);
+    if (String(style?.negative || '').trim()) lines.push(`// у стиля «${style.name}» свой негатив — при генерации он заменит этот`);
+    note.textContent = lines.join('\n');
+    note.hidden = !lines.length;
 
     const rows = root.querySelector('.chm-rows');
     const html = last.rows.map(rowHtml).join('');

@@ -56,14 +56,19 @@ export const DEFAULT_SETTINGS = Object.freeze({
         },
     },
 
-    // Этап 5: генерация и стили
-    provider: 'nai',         // 'nai' | 'naistera'
-    naiKey: '',
+    // Этап 5: генерация и стили (порт из Комы)
+    provider: 'novelai',     // 'novelai' — подписка напрямую | 'naistera'
+    naiKey: '',              // Persistent API Token (pst-…)
+    naiModel: 'nai-diffusion-5-full',
     naisteraKey: '',
+    naisteraEndpoint: '',    // пусто — https://naistera.org
+    aspectMap: { portrait: '2:3', square: '1:1', landscape: '16:9' },   // рамки для наистеры
+    naiFine: { sampler: 'k_euler_ancestral', schedule: 'karras', steps: 28, scale: 5, rescale: 0 },
     size: 'portrait',        // 'portrait' | 'square' | 'landscape'
-    styles: [],
-    activeStyleId: null,
-    previews: [],
+    styles: [],              // { id, name, tags, negative, fineOn, fine }
+    activeStyleId: '',       // '' — без стиля
+    previews: [],            // { id, path, prompt, negative, styleName, size, provider, model, seed, createdAt }
+    currentPreviewId: null,  // какая картинка показана в панели
 
     // Этап 6: сохранённые персонажи
     characters: [],
@@ -92,6 +97,11 @@ export function getSettings() {
         if (s.rnd.rules[k] === undefined) s.rnd.rules[k] = v;
     }
     delete s.randomMode;   // старый задел этапа 1, заменён на rnd.mode
+    if (s.provider === 'nai') s.provider = 'novelai';   // заглушка этапа 1
+    if (s.activeStyleId === null) s.activeStyleId = '';
+    for (const [k, v] of Object.entries(DEFAULT_SETTINGS.aspectMap)) {
+        if (!s.aspectMap[k]) s.aspectMap[k] = v;
+    }
     return s;
 }
 

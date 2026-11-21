@@ -300,7 +300,7 @@ function onClick(e) {
             box.classList.add('chm-open');
         }
         renderCatBody(cat);
-        if (v.searchOpen) box.querySelector('.chm-catbox-q')?.focus();
+        if (v.searchOpen) box.querySelector('.chm-catbox-q')?.focus({ preventScroll: true });
         renderCollapseLabel();
         return;
     }
@@ -325,6 +325,32 @@ function onInput(e) {
     box.querySelector('.chm-tags').innerHTML = list.length
         ? list.map((t) => tagHtml(t, selected, ctx)).join('')
         : '<div class="chm-empty">// ничего не нашлось</div>';
+}
+
+// ---------- Прокрутка только внутри своего контейнера ----------
+
+/**
+ * Прокрутить контейнер так, чтобы элемент оказался виден.
+ * Не scrollIntoView: тот крутит заодно всех прокручиваемых родителей, включая страницу
+ * таверны, — и её шапка уезжает вверх под нашим окном.
+ * @param {'center'|'nearest'} block
+ */
+function scrollWithin(container, el, block = 'nearest', smooth = false) {
+    if (!container || !el) return;
+    const c = container.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    let delta = 0;
+    if (block === 'center') {
+        delta = (r.top + r.height / 2) - (c.top + c.height / 2);
+    } else if (r.top < c.top) {
+        delta = r.top - c.top - 4;
+    } else if (r.bottom > c.bottom) {
+        delta = r.bottom - c.bottom + 4;
+    }
+    if (!delta) return;
+    const top = container.scrollTop + delta;
+    if (smooth && container.scrollTo) container.scrollTo({ top, behavior: 'smooth' });
+    else container.scrollTop = top;
 }
 
 // ---------- Показать тег на месте ----------
@@ -353,7 +379,7 @@ export function revealTag(id) {
 
     const el = box?.querySelector(`.chm-tag[data-id="${CSS.escape(id)}"]`);
     if (!el) return;
-    el.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    scrollWithin(rootEl.closest('.chm-col'), el, 'center', true);
     el.classList.remove('chm-flash');
     void el.offsetWidth;   // перезапуск анимации
     el.classList.add('chm-flash');
@@ -415,7 +441,7 @@ export function bindGlobalSearch(input, dropdown, beforeReveal = () => {}) {
                 + `<span class="chm-sr-cat">${escapeHtml(cat.title)}</span>`
                 + '</button>';
         }).join('');
-        dropdown.querySelector('.chm-sr.chm-active')?.scrollIntoView?.({ block: 'nearest' });
+        scrollWithin(dropdown, dropdown.querySelector('.chm-sr.chm-active'));
     }
 
     function pick(i) {

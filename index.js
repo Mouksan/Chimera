@@ -242,7 +242,7 @@ function onKeyDown(e) {
     // «/» — сразу в поиск (как на сайте)
     if (e.key === '/' && !isTyping(document.activeElement) && !settingsOpen) {
         e.preventDefault();
-        overlayEl.querySelector('.chm-search-input')?.focus();
+        overlayEl.querySelector('.chm-search-input')?.focus({ preventScroll: true });
     }
 }
 

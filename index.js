@@ -6,7 +6,9 @@ import { getSettings, saveSettings, escapeHtml, TOAST_TITLE } from './store.js';
 import { addSettingsDrawer, settingsPaneHtml, bindSettingsPane } from './settings.js';
 import { initLaunchers } from './launcher.js';
 import { loadTags } from './data.js';
-import { initCatalog, bindGlobalSearch, getDb, refreshAllSelection } from './catalog.js';
+import { initCatalog, bindGlobalSearch, refreshAllSelection, renderCatalog, revealTag } from './catalog.js';
+import { initPanel, renderPanel } from './panel.js';
+import { currentGender, isIncompatible, triggeredGenerics } from './builder.js';
 
 // ---------- Окно ----------
 
@@ -55,11 +57,6 @@ function buildWindow() {
                             <span class="chm-panel-title">Собранный персонаж</span>
                             <span class="chm-panel-count">0 тег.</span>
                         </div>
-                        <div class="chm-card chm-prompt-card">
-                            <div class="chm-mono-label">prompt</div>
-                            <div class="chm-prompt-text"></div>
-                        </div>
-                        <div class="chm-stub">Пока это черновой просмотр выбранного. Веса, закрепы, тумблеры и копирование — этап 3; стиль и генерация — этап 5.</div>
                     </aside>
                 </div>
 
@@ -87,7 +84,6 @@ function buildWindow() {
 
     document.body.appendChild(overlay);
     bindSettingsPane();
-    renderPanel(overlay);
     return overlay;
 }
 
@@ -102,19 +98,25 @@ async function ensureCatalog() {
     const list = overlayEl.querySelector('.chm-catalog-list');
     try {
         const db = await loadTags();
-        initCatalog(list, db, () => renderPanel());
+        tagDb = db;
+        dropUnknownTags(db);
+        lastGender = currentGender(db);
+        initCatalog(list, db, () => onBuildChange());
+        initPanel(overlayEl.querySelector('.chm-panel'), db, {
+            onChange: (id, opts) => onBuildChange(opts),
+            onReveal: (id) => {
+                toCatalogTab();
+                revealTag(id);
+            },
+            onBan: () => {},
+        });
         bindGlobalSearch(
             overlayEl.querySelector('.chm-search-input'),
             overlayEl.querySelector('.chm-search-results'),
-            () => {
-                getSettings().mobileTab = 'catalog';
-                saveSettings();
-                renderMobileTabs();
-            },
+            toCatalogTab,
         );
         catalogReady = true;
-        dropUnknownTags(db);
-        renderPanel();
+        updateCounts();
     } catch (error) {
         console.error('[Chimera] Не удалось загрузить базу тегов', error);
         list.innerHTML = `<div class="chm-stub chm-stub-big">Не удалось загрузить базу тегов.<br><small>${escapeHtml(error?.message || error)}</small></div>`;
@@ -124,36 +126,69 @@ async function ensureCatalog() {
     }
 }
 
-/** Если тег удалили или переименовали в tags.txt — молча выкинуть его из сборки. */
+let tagDb = null;
+let lastGender = null;
+
+/** Если тег удалили или переименовали в tags.txt — молча выкинуть его из сборки и бана. */
 function dropUnknownTags(db) {
     const s = getSettings();
-    const before = s.build.length;
+    const before = s.build.length + s.banned.length;
     s.build = s.build.filter((b) => db.tags.has(b.id));
-    if (s.build.length !== before) {
-        saveSettings();
-        refreshAllSelection();
-    }
+    s.banned = s.banned.filter((id) => db.tags.has(id));
+    if (s.build.length + s.banned.length !== before) saveSettings();
 }
 
-/** Правая колонка: пока счётчик и черновой список выбранных английских тегов. */
-function renderPanel(root = overlayEl) {
-    if (!root) return;
-    const db = getDb();
-    const build = getSettings().build;
-    const n = build.length;
-    root.querySelector('.chm-panel-count').textContent = `${n} тег.`;
-    const mcount = root.querySelector('.chm-mtab-count');
+function toCatalogTab() {
+    getSettings().mobileTab = 'catalog';
+    saveSettings();
+    renderMobileTabs();
+}
+
+function updateCounts() {
+    const n = getSettings().build.length;
+    const mcount = overlayEl?.querySelector('.chm-mtab-count');
     if (mcount) mcount.textContent = String(n);
-    const text = root.querySelector('.chm-prompt-text');
-    if (!db || !n) {
-        text.innerHTML = '<span class="chm-prompt-empty">// пусто — выбери теги слева</span>';
-        return;
+}
+
+/**
+ * Сборка поменялась (клик в каталоге, ✕ / 🚫 в панели, тумблер).
+ * Следим за полом: при выключенном «чужой пол» несовместимые теги уходят из сборки,
+ * а при смене пола каталог перерисовывается (cat girl ↔ cat boy, прячется «Грудь»).
+ */
+function onBuildChange(opts = {}) {
+    if (!tagDb) return;
+    const s = getSettings();
+    const gender = currentGender(tagDb, s.build);
+
+    if (!s.toggles.otherGender) {
+        const before = s.build.length;
+        s.build = s.build.filter((b) => {
+            const tag = tagDb.tags.get(b.id);
+            return !tag || !isIncompatible(tag, gender);
+        });
+        const dropped = before - s.build.length;
+        if (dropped) {
+            saveSettings();
+            window.toastr?.info(`Убрала ${dropped} тег. другого пола — «чужой пол» выключен.`, TOAST_TITLE, { timeOut: 2500 });
+        }
     }
-    text.innerHTML = build
-        .map((b) => db.tags.get(b.id))
-        .filter(Boolean)
-        .map((t) => `<span class="chm-ptag">${escapeHtml(t.en)}</span>`)
-        .join('<span class="chm-pcomma">, </span>');
+
+    // «Само», снятое руками, держится, пока в сборке есть его повод; повод ушёл — забываем
+    const triggered = triggeredGenerics(tagDb, s.build);
+    const keep = s.autoOff.filter((en) => triggered.has(en));
+    if (keep.length !== s.autoOff.length) {
+        s.autoOff = keep;
+        saveSettings();
+    }
+
+    if (gender !== lastGender || opts.toggle === 'otherGender') {
+        lastGender = gender;
+        renderCatalog();
+    } else {
+        refreshAllSelection();
+    }
+    renderPanel();
+    updateCounts();
 }
 
 function openSettings() {

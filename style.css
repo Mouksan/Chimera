@@ -661,6 +661,431 @@
     color: var(--chm-accent);
 }
 
+/* ---------- Правая колонка: тумблеры ---------- */
+
+.chm-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chm-switches {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+    margin: 4px 0 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--chm-line);
+}
+
+.chm-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.chm-switch input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.chm-switch-track {
+    position: relative;
+    flex-shrink: 0;
+    width: 34px;
+    height: 20px;
+    background: rgba(127, 127, 127, 0.3);
+    border-radius: 999px;
+    transition: background 0.15s;
+}
+
+.chm-switch-track::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.15s;
+}
+
+.chm-switch input:checked + .chm-switch-track {
+    background: var(--chm-accent);
+}
+
+.chm-switch input:checked + .chm-switch-track::after {
+    transform: translateX(14px);
+}
+
+.chm-switch input:focus-visible + .chm-switch-track {
+    outline: 2px solid var(--chm-accent);
+    outline-offset: 2px;
+}
+
+.chm-switch-label {
+    overflow: hidden;
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.8em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.85;
+}
+
+/* Промт */
+
+.chm-ptag-auto {
+    opacity: 0.7;
+}
+
+.chm-ptag-clothing,
+.chm-ptag-custom {
+    color: var(--chm-accent);
+}
+
+/* ---------- Негатив и свои теги ---------- */
+
+.chm-fold {
+    padding: 10px 14px;
+    background: var(--chm-soft);
+    border: 1px solid var(--chm-line);
+    border-radius: 12px;
+}
+
+.chm-fold > summary {
+    margin: 0;
+    cursor: pointer;
+    list-style: none;
+}
+
+.chm-fold > summary::-webkit-details-marker {
+    display: none;
+}
+
+.chm-fold > summary::before {
+    content: '›';
+    display: inline-block;
+    margin-right: 8px;
+    transition: transform 0.15s;
+}
+
+.chm-fold[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.chm-fold[open] > summary {
+    margin-bottom: 8px;
+}
+
+.chm-fold textarea {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.88em;
+}
+
+.chm-neg-note {
+    margin-bottom: 6px;
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.82em;
+    font-style: italic;
+    opacity: 0.6;
+}
+
+.chm-neg-note[hidden] {
+    display: none;
+}
+
+.chm-fold-foot {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.chm-seg {
+    display: inline-flex;
+    gap: 2px;
+    margin-bottom: 8px;
+    padding: 3px;
+    border: 1px solid var(--chm-line);
+    border-radius: 10px;
+}
+
+.chm-seg-btn {
+    padding: 5px 12px;
+    color: inherit;
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.chm-seg-btn.chm-active {
+    color: var(--SmartThemeBlurTintColor, #111);
+    background: var(--chm-accent);
+    opacity: 1;
+}
+
+/* ---------- Кнопка «Скопировать промт» ---------- */
+
+.chm-copy-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 13px 16px;
+    color: var(--SmartThemeBlurTintColor, #111);
+    font: inherit;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: var(--chm-accent);
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--chm-accent) 35%, transparent);
+    transition: filter 0.15s;
+}
+
+.chm-copy-btn:hover {
+    filter: brightness(1.08);
+}
+
+/* ---------- Строки выбранных тегов ---------- */
+
+.chm-rows-head {
+    margin-top: 6px;
+}
+
+.chm-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chm-row {
+    padding: 8px 12px 10px;
+    background: var(--chm-soft);
+    border: 1px solid var(--chm-line);
+    border-radius: 12px;
+}
+
+.chm-row.chm-pinned {
+    border-color: color-mix(in srgb, var(--chm-accent) 55%, var(--chm-line));
+}
+
+.chm-row-auto {
+    padding-bottom: 8px;
+    border-style: dashed;
+}
+
+.chm-row-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.chm-row-name {
+    flex-shrink: 0;
+    max-width: 55%;
+    padding: 0;
+    overflow: hidden;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+button.chm-row-name:hover {
+    color: var(--chm-accent);
+}
+
+.chm-row-shade {
+    font-weight: 400;
+    opacity: 0.8;
+}
+
+.chm-row-en {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.76em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.55;
+}
+
+.chm-badge {
+    padding: 1px 7px;
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.7em;
+    color: var(--chm-accent);
+    border: 1px solid color-mix(in srgb, var(--chm-accent) 50%, transparent);
+    border-radius: 999px;
+}
+
+.chm-row-tools {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+}
+
+.chm-row-w {
+    min-width: 40px;
+    margin-right: 2px;
+    color: var(--chm-accent);
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.82em;
+    font-weight: 700;
+    text-align: right;
+}
+
+.chm-row-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    opacity: 0.55;
+}
+
+.chm-row-btn:hover {
+    opacity: 1;
+    background: rgba(127, 127, 127, 0.15);
+}
+
+.chm-row-btn.chm-active {
+    color: var(--chm-accent);
+    opacity: 1;
+}
+
+.chm-mini-dot {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    border: 1px solid rgba(127, 127, 127, 0.5);
+    border-radius: 50%;
+}
+
+/* Слайдер веса */
+
+.chm-w {
+    width: 100%;
+    margin: 8px 0 0;
+    accent-color: var(--chm-accent);
+    cursor: pointer;
+}
+
+/* Палитра в строке */
+
+.chm-pal {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--chm-line);
+}
+
+.chm-pal-label {
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.7em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.55;
+}
+
+.chm-pal-colors,
+.chm-pal-shades {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.chm-pal-dot {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    color: #fff;
+    font-size: 0.7em;
+    font-weight: 800;
+    text-shadow: 0 0 3px #000;
+    border: 1px solid rgba(127, 127, 127, 0.5);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.chm-pal-dot.chm-active {
+    outline: 2px solid var(--chm-accent);
+    outline-offset: 2px;
+}
+
+.chm-pal-shade {
+    padding: 4px 10px;
+    color: inherit;
+    font: inherit;
+    font-size: 0.85em;
+    background: transparent;
+    border: 1px solid var(--chm-line);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.chm-pal-shade.chm-active {
+    border-color: var(--chm-accent);
+    background: color-mix(in srgb, var(--chm-accent) 22%, transparent);
+}
+
+.chm-pal-reset {
+    align-self: flex-start;
+    font-size: 0.8em;
+}
+
+/* Забаненные теги в каталоге */
+
+.chm-tag.chm-banned {
+    opacity: 0.4;
+    border-style: dotted;
+}
+
+.chm-tag.chm-banned .chm-tag-ru {
+    text-decoration: line-through;
+}
+
 /* ---------- Экран настроек (поверх колонок) ---------- */
 
 .chm-settings-pane {

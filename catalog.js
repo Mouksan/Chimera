@@ -3,6 +3,7 @@
 
 import { getSettings, saveSettings, escapeHtml } from './store.js';
 import { swatchCss, normalizeQuery } from './data.js';
+import { currentGender, genderedEn, isIncompatible } from './builder.js';
 
 const SEARCH_MIN = 18;       // у категорий от стольких тегов есть свой поиск (как на сайте)
 const GLOBAL_LIMIT = 40;     // сколько результатов показывать в общем поиске
@@ -43,6 +44,9 @@ export function toggleTag(id) {
     const tag = db?.tags.get(id);
     if (!tag) return;
     const s = getSettings();
+    // Клик по забаненному тегу снимает бан и сразу выбирает тег
+    const banIdx = s.banned.indexOf(id);
+    if (banIdx >= 0) s.banned.splice(banIdx, 1);
     const idx = s.build.findIndex((b) => b.id === id);
     if (idx >= 0) {
         s.build.splice(idx, 1);
@@ -56,13 +60,14 @@ export function toggleTag(id) {
     }
     saveSettings();
     refreshSelection(tag.catId);
-    onChange();
+    onChange(id);
 }
 
 /** Перекрасить выбранные теги в категории (или во всех открытых). */
 function refreshSelection(catId) {
     if (!rootEl) return;
     const selected = selectedIds();
+    const banned = new Set(getSettings().banned);
     const cats = catId ? [db.cats.get(catId)] : [...db.cats.values()];
     for (const cat of cats) {
         const box = rootEl.querySelector(`.chm-catbox[data-cat="${cat.id}"]`);
@@ -70,6 +75,7 @@ function refreshSelection(catId) {
         box.querySelectorAll('.chm-tag').forEach((el) => {
             const on = selected.has(el.dataset.id);
             el.classList.toggle('chm-on', on);
+            el.classList.toggle('chm-banned', banned.has(el.dataset.id));
             el.setAttribute('aria-pressed', String(on));
         });
         renderCatCount(box, cat, selected);
@@ -82,24 +88,47 @@ export function refreshAllSelection() {
 
 // ---------- Рендер ----------
 
-function tagHtml(tag, selected) {
+function tagHtml(tag, selected, ctx = renderCtx()) {
     const on = selected.has(tag.id);
+    const banned = ctx.banned.has(tag.id);
     const swatch = swatchCss(tag.swatch);
     const dot = swatch ? `<span class="chm-dot" style="background:${escapeHtml(swatch)}"></span>` : '';
+    const en = genderedEn(tag, ctx.gender);
     // У цветных кружков английский не показываем (как на сайте); у эмотиконов, где ru = en, — тоже
     const showEn = !swatch && tag.ru !== tag.en;
-    return `<button type="button" class="chm-tag${on ? ' chm-on' : ''}${tag.rare ? ' chm-rare' : ''}" data-id="${escapeHtml(tag.id)}" aria-pressed="${on}" title="${escapeHtml(tag.en)}">`
+    const title = banned ? `${en} — в бане, клик снимет бан` : en;
+    return `<button type="button" class="chm-tag${on ? ' chm-on' : ''}${tag.rare ? ' chm-rare' : ''}${banned ? ' chm-banned' : ''}" data-id="${escapeHtml(tag.id)}" aria-pressed="${on}" title="${escapeHtml(title)}">`
         + dot
         + `<span class="chm-tag-ru">${escapeHtml(tag.ru)}</span>`
-        + (showEn ? `<span class="chm-tag-en">${escapeHtml(tag.en)}</span>` : '')
+        + (showEn ? `<span class="chm-tag-en">${escapeHtml(en)}</span>` : '')
         + (tag.rare ? '<span class="chm-tag-rare">&lt;100</span>' : '')
         + '</button>';
 }
 
-function visibleTags(cat) {
+/** Общее для отрисовки: пол, баны, показывать ли чужой пол. */
+function renderCtx() {
+    const s = getSettings();
+    return {
+        gender: db ? currentGender(db, s.build) : null,
+        banned: new Set(s.banned),
+        showOther: s.toggles.otherGender,
+    };
+}
+
+/** Тег виден с учётом пола (при выключенном «чужой пол» несовместимые прячутся). */
+function genderVisible(tag, ctx) {
+    return ctx.showOther || !isIncompatible(tag, ctx.gender);
+}
+
+function visibleTags(cat, ctx = renderCtx()) {
     const v = viewOf(cat.id);
     const q = normalizeQuery(v.q);
-    return cat.tags.filter((t) => (v.sub === 'all' || t.sub === v.sub) && (!q || t.search.includes(q)));
+    return cat.tags.filter((t) => genderVisible(t, ctx) && (v.sub === 'all' || t.sub === v.sub) && (!q || t.search.includes(q)));
+}
+
+/** Категория целиком чужого пола (например, «Грудь» при мужском) — прячем её саму. */
+function catHidden(cat, ctx) {
+    return !ctx.showOther && cat.tags.every((t) => isIncompatible(t, ctx.gender));
 }
 
 function renderCatCount(box, cat, selected = selectedIds()) {
@@ -113,6 +142,7 @@ function renderCatCount(box, cat, selected = selectedIds()) {
 function catBodyHtml(cat) {
     const v = viewOf(cat.id);
     const selected = selectedIds();
+    const ctx = renderCtx();
     const search = v.searchOpen
         ? `<div class="chm-catbox-search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" class="chm-catbox-q" placeholder="искать в «${escapeHtml(cat.title)}»" value="${escapeHtml(v.q)}" autocomplete="off" spellcheck="false"></div>`
         : '';
@@ -122,18 +152,19 @@ function catBodyHtml(cat) {
             + cat.subs.map((s) => `<button type="button" class="chm-sub${v.sub === s.key ? ' chm-active' : ''}" data-sub="${escapeHtml(s.key)}">${escapeHtml(s.title)}</button>`).join('')
             + `</div>`
         : '';
-    const list = visibleTags(cat);
+    const list = visibleTags(cat, ctx);
     const tags = list.length
-        ? list.map((t) => tagHtml(t, selected)).join('')
+        ? list.map((t) => tagHtml(t, selected, ctx)).join('')
         : '<div class="chm-empty">// ничего не нашлось</div>';
     return `${search}${subs}<div class="chm-tags">${tags}</div>`;
 }
 
-function catHtml(cat) {
+function catHtml(cat, ctx = renderCtx()) {
     const open = isCatOpen(cat);
     const canSearch = cat.tags.length >= SEARCH_MIN;
+    const hidden = catHidden(cat, ctx);
     return `
-        <div class="chm-catbox${open ? ' chm-open' : ''}" data-cat="${escapeHtml(cat.id)}">
+        <div class="chm-catbox${open ? ' chm-open' : ''}" data-cat="${escapeHtml(cat.id)}"${hidden ? ' hidden' : ''}>
             <div class="chm-catbox-head">
                 <button type="button" class="chm-catbox-toggle" aria-expanded="${open}">
                     <i class="fa-solid fa-chevron-down chm-chev"></i>
@@ -147,7 +178,7 @@ function catHtml(cat) {
         </div>`;
 }
 
-function sectionHtml(sec) {
+function sectionHtml(sec, ctx) {
     const open = isSectionOpen(sec);
     return `
         <section class="chm-sec${open ? ' chm-open' : ''}" data-sec="${escapeHtml(sec.id)}">
@@ -157,7 +188,7 @@ function sectionHtml(sec) {
                 <span class="chm-sec-en">${escapeHtml(sec.en)}</span>
                 <i class="fa-solid fa-chevron-down chm-chev"></i>
             </button>
-            <div class="chm-sec-body">${sec.cats.map(catHtml).join('')}</div>
+            <div class="chm-sec-body">${sec.cats.map((c) => catHtml(c, ctx)).join('')}</div>
         </section>`;
 }
 
@@ -171,13 +202,18 @@ function renderCatBody(cat) {
 /** Полный перерисованный каталог (после загрузки и после «Свернуть всё»). */
 export function renderCatalog() {
     if (!rootEl || !db) return;
+    const ctx = renderCtx();
+    // Сохраняем прокрутку: полная перерисовка не должна прыгать наверх
+    const scroller = rootEl.closest('.chm-col');
+    const top = scroller?.scrollTop || 0;
     rootEl.innerHTML = `
         <div class="chm-catalog-tools">
             <button type="button" class="chm-btn chm-collapse-all"></button>
         </div>
-        ${db.sections.map(sectionHtml).join('')}`;
+        ${db.sections.map((sec) => sectionHtml(sec, ctx)).join('')}`;
     rootEl.querySelectorAll('.chm-catbox').forEach((box) => renderCatCount(box, db.cats.get(box.dataset.cat)));
     renderCollapseLabel();
+    if (scroller) scroller.scrollTop = top;
 }
 
 // ---------- «Свернуть всё» ----------
@@ -284,9 +320,10 @@ function onInput(e) {
     viewOf(cat.id).q = input.value;
     // Перерисовываем только список, чтобы не терять фокус в поле
     const selected = selectedIds();
-    const list = visibleTags(cat);
+    const ctx = renderCtx();
+    const list = visibleTags(cat, ctx);
     box.querySelector('.chm-tags').innerHTML = list.length
-        ? list.map((t) => tagHtml(t, selected)).join('')
+        ? list.map((t) => tagHtml(t, selected, ctx)).join('')
         : '<div class="chm-empty">// ничего не нашлось</div>';
 }
 
@@ -328,9 +365,11 @@ export function revealTag(id) {
 export function searchTags(query) {
     const q = normalizeQuery(query);
     if (!q || !db) return [];
+    const ctx = renderCtx();
     const starts = [];
     const contains = [];
     for (const tag of db.tags.values()) {
+        if (!genderVisible(tag, ctx)) continue;
         const ru = tag.ru.toLowerCase().replace(/ё/g, 'е');
         const en = tag.en.toLowerCase();
         if (ru.startsWith(q) || en.startsWith(q)) starts.push(tag);
@@ -372,7 +411,7 @@ export function bindGlobalSearch(input, dropdown, beforeReveal = () => {}) {
             const cat = db.cats.get(t.catId);
             return `<button type="button" class="chm-sr${i === active ? ' chm-active' : ''}${selected.has(t.id) ? ' chm-on' : ''}" data-i="${i}">`
                 + `<span class="chm-sr-ru">${escapeHtml(t.ru)}</span>`
-                + `<span class="chm-sr-en">${escapeHtml(t.en)}</span>`
+                + `<span class="chm-sr-en">${escapeHtml(genderedEn(t, currentGender(db)))}</span>`
                 + `<span class="chm-sr-cat">${escapeHtml(cat.title)}</span>`
                 + '</button>';
         }).join('');

@@ -3,6 +3,7 @@
 // Этап 2: каталог тегов — разделы, категории, подгруппы, поиск, выбор «один / мульти»
 // Этап 3: сборка промта и правая колонка
 // Этап 4а: баны, закрепы категорий, кубики, сброс и откат, бан-лист, конфликты
+// Этап 4б: режимы, «Рандом всего» / «Просто рандом», пресеты, «Рандом без…», умные правила, палитра
 
 import { getSettings, saveSettings, escapeHtml, TOAST_TITLE } from './store.js';
 import { addSettingsDrawer, settingsPaneHtml, bindSettingsPane } from './settings.js';
@@ -17,6 +18,8 @@ import { initBanList, openBanList, closeBanList, isBanListOpen } from './banlist
 import { resetBuild, unpinAll, undo, canUndo, setHistoryListener } from './random.js';
 import { banTagWithUndo } from './catalog.js';
 import { toast } from './notice.js';
+import { initRandomCard } from './randomui.js';
+import { checkPresetIds } from './randgen.js';
 
 // ---------- Окно ----------
 
@@ -53,13 +56,6 @@ function buildWindow() {
                     <section class="chm-col chm-catalog" data-col="catalog">
                         <div class="chm-card chm-random-card">
                             <div class="chm-card-head"><i class="fa-solid fa-dice"></i> Рандом и пресеты</div>
-                            <div class="chm-stub">Режимы, «Рандом всего» и пресеты-архетипы — следующим заходом. Пока работают 🎲 в шапках категорий.</div>
-                            <div class="chm-rnd-actions">
-                                <button type="button" class="chm-act chm-act-reset" title="Убрать всё незакреплённое"><i class="fa-solid fa-rotate-left"></i> Сброс</button>
-                                <button type="button" class="chm-act chm-act-undo" title="Откатить последний рандом или сброс" disabled><i class="fa-solid fa-clock-rotate-left"></i></button>
-                                <button type="button" class="chm-act chm-act-unpin" title="Открепить все теги"><i class="fa-solid fa-thumbtack"></i> Снять закрепы</button>
-                                <button type="button" class="chm-act chm-act-banlist" title="Всё, что не предлагает рандом"><i class="fa-solid fa-ban"></i> Бан-лист <span class="chm-banlist-count"></span></button>
-                            </div>
                         </div>
                         <div class="chm-catalog-list">
                             <div class="chm-stub chm-stub-big"><i class="fa-solid fa-spinner fa-spin"></i> Загружаю теги…</div>
@@ -126,6 +122,8 @@ async function ensureCatalog() {
             onBan: (id) => banTagWithUndo(id),
         });
         initBanList(db, () => onBuildChange({ bans: true }));
+        checkPresetIds(db);
+        initRandomCard(overlayEl.querySelector('.chm-random-card'), db, (opts) => onBuildChange(opts));
         bindRandomActions();
         bindGlobalSearch(
             overlayEl.querySelector('.chm-search-input'),

@@ -39,8 +39,22 @@ export const DEFAULT_SETTINGS = Object.freeze({
     custom: { text: '', place: 'start' },   // 'start' | 'end' | 'split'
 
     // Этап 4: рандом
-    banned: [],              // id тегов, подгрупп и категорий
-    randomMode: 'main',      // 'main' | 'random' | 'wild'
+    banned: [],              // ключи бана: id тега, «sub:кат:подгр», «cat:кат» (см. bans.js)
+    rnd: {
+        mode: 'main',        // 'main' — умный | 'random' — чистый случай | 'wild' — удивительное
+        without: [],         // «рандом без…»: ears, wings, tail, horns, antennae, beastLegs, beastTraits, beastRaces, fur, human
+        detail: 6,           // детализация 1–10: сколько необязательных категорий заполнять
+        preset: null,        // активный пресет-архетип (id) или null
+        rules: {
+            kinship: true,   // родство видов: уши, хвост, раса и окрас от одного зверя
+            hair: true,      // стрижка по длине и осознанная причёска
+            skin: true,      // осознанная кожа: необычная — редко
+            sheets: true,    // страховка от листов: без reference sheet и т.п.
+            partColor: 'generous', // цвет частей: 'generous' | 'stingy' | 'off'
+            palette: true,   // подбирать цвета волос, глаз и частей друг к другу
+            scheme: 'auto',  // 'auto' | 'mono' | 'adjacent' | 'split' | 'contrast' | 'triad'
+        },
+    },
 
     // Этап 5: генерация и стили
     provider: 'nai',         // 'nai' | 'naistera'
@@ -69,11 +83,15 @@ export function getSettings() {
         if (s[key] === undefined) s[key] = structuredClone(value);
     }
     // Вложенные объекты тоже дотягиваем до текущей версии
-    for (const key of ['toggles', 'custom']) {
+    for (const key of ['toggles', 'custom', 'rnd']) {
         for (const [k, v] of Object.entries(DEFAULT_SETTINGS[key])) {
             if (s[key][k] === undefined) s[key][k] = structuredClone(v);
         }
     }
+    for (const [k, v] of Object.entries(DEFAULT_SETTINGS.rnd.rules)) {
+        if (s.rnd.rules[k] === undefined) s.rnd.rules[k] = v;
+    }
+    delete s.randomMode;   // старый задел этапа 1, заменён на rnd.mode
     return s;
 }
 

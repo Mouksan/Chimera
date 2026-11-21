@@ -25,7 +25,7 @@ face_misc/faceless <> eye_color, pupils, emotions, smiles, mouth, emoticons
 mouth/no mouth <> smiles, emoticons, mouth/open mouth, mouth/parted lips, mouth/tongue, mouth/tongue out, mouth/fang, mouth/fangs, mouth/teeth
 
 # Закрытые глаза и прямой взгляд
-eye_state/closed eyes, eye_state/blinking <> gaze/looking at viewer, gaze/eye contact, gaze/staring, gaze/wide-eyed, gaze/unusually open eyes, gaze/rolling eyes, gaze/sideways glance, gaze/pleading eyes
+eye_state/closed eyes, eye_state/blinking <> gaze/looking at viewer, gaze/eye contact, gaze/staring, gaze/wide-eyed, gaze/unusually open eyes, gaze/rolling eyes, gaze/sideways glance, gaze/pleading eyes, gaze/cross-eyed, gaze/squinting, gaze/narrowed eyes, gaze/upturned eyes
 eye_state/blindfold <> gaze/looking at viewer, gaze/eye contact, gaze/staring
 
 # Лысина и причёски

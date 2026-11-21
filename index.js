@@ -1,9 +1,12 @@
 // Chimera — конструктор персонажа по тегам
 // Этап 1: каркас — окно во весь экран в две колонки, кнопки запуска, настройки под шестерёнкой
+// Этап 2: каталог тегов — разделы, категории, подгруппы, поиск, выбор «один / мульти»
 
-import { getSettings, saveSettings } from './store.js';
+import { getSettings, saveSettings, escapeHtml, TOAST_TITLE } from './store.js';
 import { addSettingsDrawer, settingsPaneHtml, bindSettingsPane } from './settings.js';
 import { initLaunchers } from './launcher.js';
+import { loadTags } from './data.js';
+import { initCatalog, bindGlobalSearch, getDb, refreshAllSelection } from './catalog.js';
 
 // ---------- Окно ----------
 
@@ -18,11 +21,14 @@ function buildWindow() {
         <div class="chm-window" role="dialog" aria-label="Chimera">
             <div class="chm-header">
                 <div class="chm-title"><i class="fa-solid fa-dragon"></i><span>「 CHIMERA 」</span></div>
-                <label class="chm-search">
-                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                    <input type="search" class="chm-search-input" placeholder="найти тег по названию или по-английски" autocomplete="off" spellcheck="false">
-                    <kbd class="chm-kbd" title="Быстрый поиск">/</kbd>
-                </label>
+                <div class="chm-search-wrap">
+                    <label class="chm-search">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="search" class="chm-search-input" placeholder="найти тег по названию или по-английски" autocomplete="off" spellcheck="false">
+                        <kbd class="chm-kbd" title="Быстрый поиск">/</kbd>
+                    </label>
+                    <div class="chm-search-results" hidden></div>
+                </div>
                 <button class="chm-icon-btn chm-gear" type="button" title="Настройки" aria-pressed="false"><i class="fa-solid fa-gear"></i></button>
                 <button class="chm-icon-btn chm-close" type="button" title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
             </div>
@@ -40,7 +46,7 @@ function buildWindow() {
                             <div class="chm-stub">Режимы, «рандом без…» и пресеты-архетипы появятся на этапе 4.</div>
                         </div>
                         <div class="chm-catalog-list">
-                            <div class="chm-stub chm-stub-big">Каталог тегов появится на этапе 2.</div>
+                            <div class="chm-stub chm-stub-big"><i class="fa-solid fa-spinner fa-spin"></i> Загружаю теги…</div>
                         </div>
                     </section>
 
@@ -51,9 +57,9 @@ function buildWindow() {
                         </div>
                         <div class="chm-card chm-prompt-card">
                             <div class="chm-mono-label">prompt</div>
-                            <div class="chm-prompt-empty">// пусто — выбери теги слева</div>
+                            <div class="chm-prompt-text"></div>
                         </div>
-                        <div class="chm-stub">Веса, негатив, стиль и генерация — этапы 3 и 5.</div>
+                        <div class="chm-stub">Пока это черновой просмотр выбранного. Веса, закрепы, тумблеры и копирование — этап 3; стиль и генерация — этап 5.</div>
                     </aside>
                 </div>
 
@@ -81,7 +87,73 @@ function buildWindow() {
 
     document.body.appendChild(overlay);
     bindSettingsPane();
+    renderPanel(overlay);
     return overlay;
+}
+
+// ---------- Каталог и правая панель ----------
+
+let catalogReady = false;
+let catalogLoading = false;
+
+async function ensureCatalog() {
+    if (catalogReady || catalogLoading || !overlayEl) return;
+    catalogLoading = true;
+    const list = overlayEl.querySelector('.chm-catalog-list');
+    try {
+        const db = await loadTags();
+        initCatalog(list, db, () => renderPanel());
+        bindGlobalSearch(
+            overlayEl.querySelector('.chm-search-input'),
+            overlayEl.querySelector('.chm-search-results'),
+            () => {
+                getSettings().mobileTab = 'catalog';
+                saveSettings();
+                renderMobileTabs();
+            },
+        );
+        catalogReady = true;
+        dropUnknownTags(db);
+        renderPanel();
+    } catch (error) {
+        console.error('[Chimera] Не удалось загрузить базу тегов', error);
+        list.innerHTML = `<div class="chm-stub chm-stub-big">Не удалось загрузить базу тегов.<br><small>${escapeHtml(error?.message || error)}</small></div>`;
+        window.toastr?.error('Не удалось загрузить базу тегов — подробности в консоли.', TOAST_TITLE);
+    } finally {
+        catalogLoading = false;
+    }
+}
+
+/** Если тег удалили или переименовали в tags.txt — молча выкинуть его из сборки. */
+function dropUnknownTags(db) {
+    const s = getSettings();
+    const before = s.build.length;
+    s.build = s.build.filter((b) => db.tags.has(b.id));
+    if (s.build.length !== before) {
+        saveSettings();
+        refreshAllSelection();
+    }
+}
+
+/** Правая колонка: пока счётчик и черновой список выбранных английских тегов. */
+function renderPanel(root = overlayEl) {
+    if (!root) return;
+    const db = getDb();
+    const build = getSettings().build;
+    const n = build.length;
+    root.querySelector('.chm-panel-count').textContent = `${n} тег.`;
+    const mcount = root.querySelector('.chm-mtab-count');
+    if (mcount) mcount.textContent = String(n);
+    const text = root.querySelector('.chm-prompt-text');
+    if (!db || !n) {
+        text.innerHTML = '<span class="chm-prompt-empty">// пусто — выбери теги слева</span>';
+        return;
+    }
+    text.innerHTML = build
+        .map((b) => db.tags.get(b.id))
+        .filter(Boolean)
+        .map((t) => `<span class="chm-ptag">${escapeHtml(t.en)}</span>`)
+        .join('<span class="chm-pcomma">, </span>');
 }
 
 function openSettings() {
@@ -184,6 +256,7 @@ function openWindow() {
     renderMobileTabs();
     overlayEl.classList.add('chm-open');
     document.addEventListener('keydown', onKeyDown);
+    ensureCatalog();
 }
 
 function closeWindow() {

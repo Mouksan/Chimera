@@ -1,0 +1,2534 @@
+# ============================================================================
+#  Chimera — база тегов
+# ============================================================================
+#  Этот файл можно править руками: добавлять теги, переименовывать, двигать.
+#  После правки — просто перезагрузить таверну.
+#
+#  == id | Раздел | ENGLISH SUBTITLE
+#  -- id | Категория | один|мульти | open      (open — раскрыта по умолчанию)
+#  ~  a=Подгруппа; b=Ещё подгруппа             (необязательно)
+#  по-русски | english tag | метки
+#
+#  Метки (через пробел, в любом порядке):
+#    @a        — подгруппа a
+#    *         — редкий тег (<100 картинок на бурах, рандом берёт реже)
+#    #pink     — кружок-цвет: имя из палитры, #rrggbb,
+#                #a/b — пополам, #a>b — градиент, #rainbow, #checker
+#    F / M     — тег только для женского / мужского пола
+#    =f =m =o  — этот тег и есть выбор пола (1girl / 1boy / 1other)
+#
+#  Английский тег может быть составным: «animal legs, fluffy legs».
+#  «girl» в расах при мужском поле сам станет «boy» (кроме помеченных F/M).
+# ============================================================================
+
+
+== scene | Сцена и кадр | SCENE & FRAMING
+
+-- view | Вид / Ракурс | мульти
+таблица эмоций | expression chart
+соло | solo
+в полный рост | full body
+по пояс | upper body
+по бёдра | cowboy shot
+портрет | portrait
+профиль | profile
+несколько видов | multiple views
+референс-лист | reference sheet
+лист персонажа | character sheet
+
+-- background | Фон | мульти
+~ a=Однотонные; b=Среда; c=Локации; d=Время; e=Погода
+белый | white background | @a #white
+простой | simple background | @a #e2e2e2
+градиент | gradient background | @a #c9b6f0>#f0b6d9
+прозрачный | transparent background | @a #checker
+улица | outdoors | @b
+помещение | indoors | @b
+пляж | beach | @c #efd49a
+океан | ocean | @c #2f7fb0
+лес | forest | @c #2e6b45
+горы | mountain | @c #7a8a9a
+поле | field | @c #8bc34a
+сад | garden | @c #5a9e5a
+руины | ruins | @c #9a8f7a
+город | cityscape | @c
+улица (вид) | street | @c #8a8f96
+небо | sky | @c #7cc4f0
+спальня | bedroom | @c
+класс | classroom | @c #c8b07a
+кухня | kitchen | @c #e0d4b8
+ванная | bathroom | @c #cfe8f0
+библиотека | library | @c #8a5a3a
+кафе | cafe | @c #b08060
+храм | temple | @c #a898c0
+утро | morning | @d #fde2a8
+рассвет | dawn | @d #f0c8a0>#a8c8e8
+вечер | evening | @d #7a5a9a
+закат | sunset | @d #f08a5a>#c04a6a
+ночь | night | @d #1e2448
+дождь | rain | @e #6a8aa8
+снег | snow | @e #e8f0f8
+туман | fog | @e #c0c4c8
+ветер | wind | @e #b0d0d8
+
+
+== who | Кто | IDENTITY
+
+-- gender | Пол | один | open
+женский | 1girl | =f
+мужской | 1boy | =m
+другое | 1other | =o
+
+-- archetype | Типаж и возраст | мульти
+~ a=Типаж; b=Возраст
+андрогинный | androgynous | @a
+миловидный юноша | bishounen | @a M
+зрелый возраст | mature | @b
+повзрослевший | aged up | @b
+
+-- race | Раса | мульти
+~ a=Общие; b=Зверолюди; c=Небесные; d=Демоны; e=Драконы; f=Эльфы и народцы; g=Великаны; h=Мифические; i=Морские; j=Духи и феи; k=Элементали; l=Нежить; m=Оборотни и ёкай; n=Прочие; o=Породы кошек; p=Породы собак; q=Птицы; r=Насекомые; s=Водные; t=Рептилии
+монстр | monster | @a
+монстродевушка | monster girl | @a F
+монстропарень | monster boy | @a M
+териантроп | therianthrope | @a
+криптид | cryptid | @a
+кошка | cat girl | @b
+лиса | fox girl | @b
+волк | wolf girl | @b
+зайка | rabbit girl | @b
+собака | dog girl | @b
+лошадь | horse girl | @b
+корова | cow girl | @b
+мышка | mouse girl | @b
+тигр | tiger girl | @b
+акула | shark girl | @s
+енот | raccoon girl | @b
+львица | lion girl | @b
+овечка | sheep girl | @b
+белка | squirrel girl | @b
+олень | deer girl | @b
+медведь | bear girl | @b
+коза | goat girl | @b
+летучая мышь | bat girl | @b
+птица | bird girl | @q
+сова | owl girl | @q
+змея | snake girl | @t
+паук | spider girl | @r
+насекомое | insect girl | @r
+мотылёк | moth girl | @r
+пчела | bee girl | @r
+лягушка | frog girl | @s
+обезьянка | monkey girl | @b
+ангел | angel | @c
+архангел | archangel | @c
+херувим | cherub | @c
+серафим | seraph | @c
+купидон | cupid | @c
+валькирия | valkyrie | @c F
+демон | demon | @d
+демонесса | demon girl | @d F
+демон-парень | demon boy | @d M
+суккуб | succubus | @d F
+инкуб | incubus | @d M
+они | oni | @d
+синий они | blue oni | @d
+красный они | red oni | @d
+огр | ogre | @g
+намахагэ | namahage | @m
+дракон | dragon | @e
+восточный дракон | eastern dragon | @e
+западный дракон | western dragon | @e
+драконодевушка | dragon girl | @e F
+драконопарень | dragon boy | @e M
+виверна | wyvern | @e
+вирм | wyrm | @e
+вуивр | vouivre | @e
+лунма | longma | @e
+василиск | basilisk | @h
+кокатрис | cockatrice | @h
+гидра | hydra | @e
+эльф | elf | @f
+тёмный эльф | dark elf | @f
+кровавый эльф | blood elf | @f
+дварф | dwarf | @f
+гном | gnome | @f
+гоблин | goblin | @f
+орк | orc | @f
+полурослик | halfling | @f
+коропоккуру | koropokkuru | @f
+великан | giant | @g
+великанша | giantess | @g F
+тролль | troll | @g
+циклоп | cyclops | @g
+минотавр | minotaur | @h
+уси-они | ushi-oni | @m
+кентавр | centaur | @h
+кентавроид | centauroid | @h
+химера | chimera | @h
+грифон | griffin | @h
+гиппогриф | hippogriff | @h
+сфинкс | sphinx | @h
+мантикора | manticore | @h
+цилинь | qilin | @h
+нуэ | nue | @m
+джекалоп | jackalope | @h
+феникс | phoenix | @h
+русалка | mermaid | @i F
+тритон | merman | @i M
+гиппокамп | hippocamp | @i
+кракен | kraken | @i
+каппа | kappa | @m
+шелки | selkie | @i
+никса | nixie | @i
+русалка (слав.) | rusalka | @i
+ундина | undine | @i
+сятихоко | shachihoko | @i
+сцилла | scylla | @i
+осьминог | octopus girl | @s
+фея | fairy | @j
+фавн | faun | @j
+сатир | satyr | @j
+нимфа | nymph | @j F
+дух | spirit | @j
+джинн | genie | @j
+банши | banshee | @j
+гарпия | harpy | @h
+калавинка | kalavinka | @c
+призрак | ghost | @l
+хитодама | hitodama | @l
+кикимора | kikimora | @j
+элементаль | elemental | @k
+саламандра | salamander | @k
+сильфида | sylph | @k
+нежить | undead | @l
+зомби | zombie | @l
+вампир | vampire | @l
+лич | lich | @l
+мумия | mummy | @l
+гуль | ghoul | @l
+цзянши | jiangshi | @l
+скелет | skeleton | @l
+синигами | shinigami | @l
+дулахан | dullahan | @l
+оборотень | werewolf | @m
+кицунэ | kitsune | @m
+кьюби (девятихвостая) | kyuubi | @m
+тануки | tanuki | @m
+бакэнэко | bakeneko | @m
+нэкомата | nekomata | @m
+кайт-ши | cait sith | @m
+ёкай | traditional youkai | @m
+тэнгу | tengu | @m
+рокурокуби | rokurokubi | @m
+юки-онна | yuki onna | @m F
+аканамэ | akaname | @m
+амабиэ | amabie | @m
+дзасики-вараси | zashiki-warashi | @m
+хакутаку | hakutaku | @m
+каракаса-обакэ | karakasa obake | @m
+тётин-обакэ | chouchin-obake | @m
+ламия | lamia | @n
+голем | golem | @n
+слайм-девушка | slime girl | @n
+растительная девушка | plant girl | @n
+йети | yeti | @n
+вендиго | wendigo | @n
+человек-мотылёк | mothman | @n
+чупакабра | chupacabra | @n
+грибная дева | mushroom girl | @n F
+грибной юноша | mushroom boy | @n M
+мандрагора | mandragora | @n
+слизь | slime | @n
+медуза (горгона) | medusa | @h
+бегемот | behemoth | @h
+цербер | cerberus | @h
+левиафан | leviathan | @h
+ямата-но ороти | yamata no orochi | @e
+цутиноко | tsuchinoko | @m
+юкинко | yukinko | @m
+врыколак | vrykolakas | @l
+бякко (белый тигр) | byakko | @h
+гэмбу (чёрная черепаха) | genbu | @h
+сэйрю (лазурный дракон) | seiryuu | @e
+судзаку (алая птица) | suzaku | @h
+фэнхуан | fenghuang | @h
+сиамская кошка | siamese cat girl | @o
+рысь | lynx girl | @o
+леопард | leopard girl | @o
+гепард | cheetah girl | @o
+американская кошка | american curl cat girl | @o
+бомбейская кошка | bombay cat girl | @o
+мейн-кун | maine coon cat girl | @o
+сомалийская кошка | somali cat girl | @o
+чёрная пантера | black panther girl | @o
+ягуар | jaguar girl | @o
+сервал | serval girl | @o
+полосатая кошка | striped cat girl | @o
+пушистая кошка | fluffy cat girl | @o
+пума | puma girl | @o
+леопон | leopon girl | @o
+трёхцветная кошка | calico cat girl | @o
+чёрно-белая кошка | tuxedo cat girl | @o
+табби | tabby cat girl | @o
+кошка-сфинкс | sphynx cat girl | @o
+немецкая овчарка | german shepherd girl | @p
+корги | corgi girl | @p
+далматинец | dalmatian girl | @p
+бульдог | bulldog girl | @p
+гиеновидная собака | african wild dog girl | @p
+гиена | hyena girl | @p
+шакал | jackal girl | @p
+койот | coyote girl | @p
+афганская борзая | afghan hound girl | @p
+акита-ину | akita inu girl | @p
+австралийский келпи | australian kelpie girl | @p
+бассет-хаунд | basset hound girl | @p
+бигль | beagle girl | @p
+бернский зенненхунд | bernese mountain dog girl | @p
+бордер-колли | border collie girl | @p
+борзая | borzoi girl | @p
+бостон-терьер | boston terrier girl | @p
+терьер | terrier girl | @p
+колли | collie girl | @p
+австралийская овчарка | australian shepherd girl | @p
+шелти | shetland sheepdog girl | @p
+спаниель | spaniel girl | @p
+аляскинский маламут | alaskan malamute girl | @p
+пули | puli girl | @p
+такса | dachshund girl | @p
+чихуахуа | chihuahua girl | @p
+китайская хохлатая собака | chinese crested dog girl | @p
+чау-чау | chow chow girl | @p
+доберман | dobermann girl | @p
+английский спрингер-спаниель | english springer spaniel girl | @p
+грейхаунд | greyhound girl | @p
+золотистый ретривер | golden retriever girl | @p
+немецкий дог | great dane girl | @p
+ирландский сеттер | irish setter girl | @p
+бобтейл | old english sheepdog girl | @p
+померанский шпиц | pomeranian girl | @p
+пудель | poodle girl | @p
+мопс | pug girl | @p
+шнауцер | schnauzer girl | @p
+сиба-ину | shiba inu girl | @p
+сенбернар | st bernard girl | @p
+вельш-корги | welsh corgi girl | @p
+йоркширский терьер | yorkshire terrier girl | @p
+павлин | peacock girl | @q
+попугай | parrot girl | @q
+попугай-корелла | cockatiel girl | @q
+ворона | crow girl | @q
+чайка | seagull girl | @q
+воробей | sparrow girl | @q
+петух | rooster girl | @q
+курочка | chicken girl | @q
+белая сова | snowy owl girl | @q
+филин | eagle owl girl | @q
+сова-сипуха | barn owl girl | @q
+роющая сова | burrowing owl girl | @q
+кукушка | cuckoo girl | @q
+уточка | duck girl | @q
+орёл | eagle girl | @q
+сокол | falcon girl | @q
+пингвин | penguin girl | @q
+тукан | toucan girl | @q
+голубь | pigeon girl | @q
+фламинго | flamingo girl | @q
+журавль | crane girl | @q
+гусь | goose girl | @q
+ястреб | hawk girl | @q
+колибри | hummingbird girl | @q
+ласточка | swallow girl | @q
+попугай-ара | macaw girl | @q
+сорока | magpie girl | @q
+страус | ostrich girl | @q
+пеликан | pelican girl | @q
+лебедь | swan girl | @q
+муравей | ant girl | @r
+жук | beetle girl | @r
+гусеница | caterpillar girl | @r
+шмель | bumblebee girl | @r
+жук-носорог | rhinoceros beetle girl | @r
+жук-олень | stag beetle girl | @r
+бабочка | butterfly girl | @r
+бабочка-монарх | monarch butterfly girl | @r
+бабочка-парусник | swallowtail butterfly girl | @r
+стрекоза | dragonfly girl | @r
+улитка | snail girl | @r
+таракан | cockroach girl | @r
+червяк | worm girl | @r
+комар | mosquito girl | @r
+сороконожка | centipede girl | @r
+цикада | cicada girl | @r
+светлячок | firefly girl | @r
+кузнечик | grasshopper girl | @r
+ласка | weasel girl | @b
+крыса | rat girl | @b
+хорёк | ferret girl | @b
+выдра | otter girl | @b
+тушканчик | jerboa girl | @b
+трубкозуб | aardvark girl | @b
+сурикат | meerkat girl | @b
+коати | coati girl | @b
+квокка | quokka girl | @b
+ёжик | hedgehog girl | @b
+мангуст | mongoose girl | @b
+хомяк | hamster girl | @b
+шиншилла | chinchilla girl | @b
+опоссум | opossum girl | @b
+барсук | badger girl | @b
+скунс | skunk girl | @b
+красная панда | red panda girl | @b
+муравьед | anteater girl | @b
+фенек | fennec girl | @b
+дикобраз | porcupine girl | @b
+капибара | capybara girl | @b
+броненосец | armadillo girl | @b
+песец | arctic fox girl | @b
+лемур | lemur girl | @b
+горилла | gorilla girl | @b
+сурок | marmot girl | @b
+ослик | donkey girl | @b
+альпака | alpaca girl | @b
+антилопа | antelope girl | @b
+зебра | zebra girl | @b
+бизон | bison girl | @b
+верблюд | camel girl | @b
+свинка | pig girl | @b
+бык | bull girl | @b
+носорог | rhinoceros girl | @b
+жираф | giraffe girl | @b
+пони | pony girl | @b
+лось | moose girl | @b
+кабан | boar girl | @b
+газель | gazelle girl | @b
+белый медведь | polar bear girl | @b
+панда | panda girl | @b
+коала | koala girl | @b
+кенгуру | kangaroo girl | @b
+слоник | elephant girl | @b
+гиппопотам | hippopotamus girl | @b
+крокодил | crocodile girl | @t
+бобр | beaver girl | @b
+кит | whale girl | @s
+креветочка | shrimp girl | @s
+краб | crab girl | @s
+лобстер | lobster girl | @s
+рак | crayfish girl | @s
+рак-отшельник | hermit crab girl | @s
+изопод | isopod girl | @s
+угорь | eel girl | @s
+медуза | jellyfish girl | @s
+морской котик | seal girl | @s
+дельфин | dolphin girl | @s
+рыбка | fish girl | @s
+черепашка | turtle girl | @t
+аксолотль | axolotl girl | @s
+нарвал | narwhal girl | @s
+рыбка-кои | koi girl | @s
+карп | carp girl | @s
+сом | catfish girl | @s
+пиявка | leech girl | @s
+утконос | platypus girl | @s
+скат | stingray girl | @s
+кобра | cobra girl | @t
+хамелеон | chameleon girl | @t
+китайский дракон | chinese dragon girl | @e
+геккон | gecko girl | @t
+игуана | iguana girl | @t
+ящерица | lizard girl | @t
+единорог | unicorn girl | @h
+пегас | pegasus girl | @h
+динозавр | dinosaur girl | @t
+
+
+== body | Тело | BODY
+
+-- build | Телосложение | один
+~ a=Худощавые; b=Спортивные; c=Пышные; d=Рост
+миниатюрное | petite | @a
+худощавое | slim | @a
+стройное | slender | @a
+тощее | skinny | @a
+атлетичное | athletic | @b
+подтянутое | toned | @b
+спортивное | fit | @b
+мускулистое | muscular | @b
+фигуристое | curvy | @c
+пухлое | chubby | @c
+полное | plump | @c
+тучное | obese | @c
+высокий рост | tall | @d
+
+-- breasts | Грудь | один
+плоская грудь | flat chest | F
+маленькая грудь | small breasts | F
+средняя грудь | medium breasts | F
+большая грудь | large breasts | F
+
+-- skin | Кожа | один | open
+~ a=Натуральные; b=Необычные
+бледная | pale skin | @a #f7e6dc
+тёмная | dark skin | @a #a06a40
+темнокожая | dark-skinned female | @a #8a5a3a F
+темнокожий | dark-skinned male | @a #7a4e30 M
+очень тёмная | very dark skin | @a #4a2e1e
+загар | tan | @a #d4a070
+следы загара | tanlines | @a #e8c8a0
+альбинос | albino | @a #fafafa
+бирюзовая | aqua skin | @b #aqua
+чёрная | black skin | @b #black
+синяя | blue skin | @b #blue
+зелёная | green skin | @b #green
+серая | grey skin | @b #grey
+оранжевая | orange skin | @b #orange
+розовая | pink skin | @b #pink
+фиолетовая | purple skin | @b #purple
+красная | red skin | @b #red
+серебряная | silver skin | @b #silver
+белая | white skin | @b #white
+жёлтая | yellow skin | @b #yellow
+очень смуглая | deep skin | @a #6a4028
+золотая | gold skin | @b #gold
+
+-- skin_special | Кожа: особое | мульти
+~ a=Тело как образ
+металлическая | metal skin | #silver
+пластиковая | plastic skin
+блестящая | shiny skin
+цветные конечности | colored extremities
+многоцветная | multicolored skin | #rainbow
+двухцветная | two-tone skin | #blue/red
+лоскутная | patchwork skin
+витилиго | vitiligo
+румянец на теле | body blush | #f4b8c8
+прозрачное тело | transparent body
+прозрачная кожа | transparent skin
+цветная кожа | colored skin
+призрачные кисти | ghost hands
+теневые кисти | shadow hands
+потрескавшаяся | cracked skin
+морщинистая | wrinkled skin
+затемнённая | darkened skin
+высветленная | lightened skin
+полосатая | striped skin
+светящаяся | glowing skin
+звёздная | starry skin
+пятнистая | spotted skin | *
+космическая | space skin | *
+переливчатая | iridescent skin | *
+ромбами | argyle skin | *
+узорная | patterned skin | *
+киборга | cyborg skin | *
+тигровая | tiger skin | *
+радужная | rainbow skin | *
+каменная | rock skin | *
+кристальная | crystal skin | *
+алмазная | diamond skin | *
+в клетку | checkered skin | *
+с принтом | print skin | *
+деревянная | wooden skin | *
+нефритовая | jade skin | *
+градиентная кожа | gradient skin | #c08ae0>#e080b0
+кожа пополам | split-color skin | #blue/red
+звёзды по коже | star print on skin | @a
+звёзды на теле | stars on body | @a
+неоновые звёзды | neon stars | @a
+пазл | body with puzzle print | @a
+пазл на теле | puzzle on body | @a
+пазл на лице | puzzle on face | @a
+космос внутри | cosmic body | @a
+космический принт | space print | @a
+россыпь звёзд | many stars | @a
+вода внутри | water print body | @a
+водоросли внутри | seaweed inside | @a
+кораллы внутри | coral inside | @a
+пятна краски | paint stains on body | @a
+цветные пятна | colorful stains | @a
+разноцветные пятна | multicolored stains | @a
+кристалл | crystal body | @a
+кристаллы наружу | crystals growing from body | @a
+кристальный глаз | crystal eye | @a
+слизь | slime body | @a
+синяя слизь | blue slime | @a
+текущие глаза | dripping eyes | @a
+фарфор | porcelain body | @a
+трещины по телу | cracks on body | @a
+разбитое тело | broken body | @a
+плюш | plush body | @a
+мягкое тело | soft body | @a
+заплатка на ноге | patch on leg | @a
+жидкое тело | liquid body | @a
+парящие части тела | floating body parts | @a
+отделённые части тела | detached body parts | @a
+тело в цветах | body covered in flowers | @a
+цветы на лице | flowers on face | @a
+цветы на теле | flowers on body | @a
+грибы | mushrooms on body | @a
+грибы на лице | mushrooms on face | @a
+перья | body in feathers | @a
+тело в перьях | feathered body | @a
+перья на щеках | cheeks with feathers | @a
+бабочки | butterflies on body | @a
+бабочка на лице | butterfly on face | @a
+неоновые бабочки | neon butterflies | @a
+сшитое тело | sewn limbs | @a
+швы по телу | stitches on body | @a
+швы по всему телу | full body stitches | @a
+пуговицы | buttons on body | @a
+пуговицы вместо глаз | buttons on eyes | @a
+пустоты в теле | hole in chest | @a
+проём в теле | body opening | @a
+дыры в теле | holes on body | @a
+кости наружу | skeletal parts | @a
+обнажённые рёбра | skeletal ribs | @a
+костяная рука | skeletal arm | @a
+костяная нога | skeletal leg | @a
+бинты | dirty bandages | @a
+гниль | rotting flesh | @a
+зеленоватая плоть | light green flesh | @a
+шарниры | articulated body | @a
+кукольные конечности | doll limbs | @a
+глитч | body glitch | @a
+глитч по всему телу | full body glitch | @a
+глитч на лице | face glitch | @a
+огонь по телу | fire on body | @a
+огонь на лице | fire on face | @a
+глаза по телу | multiple eyes all over body | @a
+щупальца | tentacles as part of body | @a
+щупальца вокруг тела | tentacles around body | @a
+склизкие щупальца | slimy tentacles | @a
+
+-- figure | Тело и фигура | мульти
+~ a=Голова и шея; b=Верх корпуса; c=Низ корпуса; d=Руки и ноги
+лоб (открытый) | forehead | @a
+длинная шея | long neck | @a
+грудные мышцы | pectorals | @b
+рёбра | ribs | @b
+пресс | abs | @b
+животик | belly | @b
+пупок | navel | @b
+косые мышцы | obliques | @b
+узкая талия | narrow waist | @c
+широкие бёдра | wide hips | @c
+впадины на бёдрах | hip dips | @c
+ямочки Венеры | dimples of venus | @c
+крупные руки | thick arms | @d
+бицепсы | biceps | @d
+длинные ноги | long legs | @d
+стройные ноги | slim legs | @d
+полные бёдра | thick thighs | @d
+пальцеходящие ноги | digitigrade | @d
+
+-- legs | Ноги | мульти
+~ a=Звериные; b=Особые
+звериные ноги | animal legs | @a
+пушистые звериные ноги | animal legs, fluffy legs | @a *
+механические ноги | mechanical legs | @b
+несколько пар ног | multiple legs | @b
+лишние ноги | extra legs | @b
+ноги с обратным суставом | reverse-jointed legs | @a
+отдельно парящие ноги | detached legs | @b
+щупальца вместо ног | tentacle legs | @b *
+жилистые ноги | veiny legs | @b *
+переплетённые ноги | interlocked legs | @b *
+асимметричные ноги | asymmetrical legs | @b *
+светящиеся ноги | glowing legs | @b *
+искусственные ноги | artificial legs | @b *
+короткие ноги | short legs | @b *
+ноги без тела | disembodied legs | @b *
+человеческие ноги | human legs | @b *
+ноги-лапша | noodle legs | @b *
+полупрозрачные ноги | see-through legs | @b *
+
+-- marks | Отметины | мульти
+~ a=Веснушки и метки; b=Родинки; c=Шрамы; d=Знаки на теле; e=Форма метки; f=Звериный окрас
+метка на лбу | forehead mark | @a
+родинка | mole | @b
+родинка под глазом | mole under eye | @b
+родинка у губ | mole under mouth | @b
+родинка на щеке | mole on cheek | @b
+родинка на шее | mole on neck | @b
+родинка на груди | mole on breast | @b
+родинка на грудине | mole on chest | @b
+родинка на бедре | mole on thigh | @b
+родинки треугольником | triangle mole | @b
+мушка | beauty mark | @b
+веснушки | freckles | @a
+метка на лице | facial mark | @a
+метки-усики | whisker markings | @a
+метка под глазом | under-eye mark | @a
+полоса через щёки | cheek-to-cheek marking | @a
+шрам | scar | @c
+шрам на лице | scar on face | @c
+шрам через глаз | scar across eye | @c
+шрам на щеке | scar on cheek | @c
+шрам на носу | scar on nose | @c
+шрам на груди | scar on chest | @c
+шрам на руке | scar on arm | @c
+шрам на ноге | scar on leg | @c
+шрам на животе | scar on stomach | @c
+шрам от ожога | burn scar | @c
+швы | stitches | @c
+зашитое лицо | stitched face | @c
+метки на теле | body markings | @d
+светящиеся узоры | glowing markings | @d
+магический круг | magic circle | @d
+руны | runes | @d
+сердечко | heart facial mark | @e
+слезинка | teardrop facial mark | @e
+звёздочка | star facial mark | @e
+треугольник | triangle facial mark | @e
+полумесяц | crescent facial mark | @e
+кружок | circle facial mark | @e
+ромбик | diamond facial mark | @e
+крестик | cross facial mark | @e
+молния | lightning bolt facial mark | @e
+цветок | flower facial mark | @e
+крестик X | x facial mark | @e
+слёзы | tears facial mark | @e
+искорка | sparkle facial mark | @e
+пика | spade facial mark | @e
+трефа | club facial mark | @e *
+бабочка | butterfly facial mark | @e *
+ямочка | dimple facial mark | @e *
+клевер | clover facial mark | @e *
+метки под обоими глазами | mark under both eyes | @a
+рысь: окрас | lynx spots on body | @f
+леопард: окрас | leopard spots on body | @f
+тигр: окрас | tiger stripes on body | @f
+гепард: окрас | cheetah spots on body | @f
+леопон: окрас | leopon spots on body | @f
+чёрные пятна на теле | black spots on body | @f
+жираф: окрас | giraffe spots on body | @f
+крокодил: окрас | crocodile scales on the body | @f
+морской котик: окрас | seal spots on body | @f
+черепашка: окрас | turtle scales on body | @f
+рыбка-кои: окрас | koi scales on body | @f
+змея: окрас | snake scales on body | @f
+кобра: окрас | cobra scales on body | @f
+василиск: окрас | basilisk scales on body | @f
+хамелеон: окрас | chameleon scales on body | @f
+дракон: окрас | dragon scales on body | @f
+китайский дракон: окрас | chinese dragon scales on body | @f
+геккон: окрас | gecko scales on body | @f
+игуана: окрас | iguana scales on body | @f
+ящерица: окрас | lizard scales on body | @f
+цилинь: окрас | qilin scales on body | @f
+
+-- tattoos | Татуировки | мульти
+~ a=Общее; b=Расположение; c=Стиль
+татуировка | tattoo | @a
+надписи на теле | body writing | @a
+хна | henna | @a
+тату на руке | arm tattoo | @b
+тату на плече | shoulder tattoo | @b
+тату на спине | back tattoo | @b
+тату на груди | chest tattoo | @b
+тату на грудине | sternum tattoo | @b
+тату на шее | neck tattoo | @b
+тату на ключице | collarbone tattoo | @b
+тату на животе | stomach tattoo | @b
+тату на ноге | leg tattoo | @b
+тату на бедре | thigh tattoo | @b
+тату на кисти | hand tattoo | @b
+тату на пальцах | finger tattoo | @b
+тату на лице | face tattoo | @b
+тату на пояснице | lower back tattoo | @b
+трайбл-тату | tribal tattoo | @c
+цветочная тату | floral tattoo | @c
+тату-номер | number tattoo | @c
+тату-штрихкод | barcode tattoo | @c
+тату-текст | text tattoo | @c
+тату-животное | animal tattoo | @c
+тату-череп | skull tattoo | @c
+тату-дракон | dragon tattoo | @c
+тату на всё тело | full-body tattoo | @b
+
+-- piercing | Пирсинг и украшения | мульти
+~ a=Голова; b=Лицо; c=Тело; d=Украшения
+в ухе | ear piercing | @a
+индастриал | industrial piercing | @a
+в зверином ухе | animal ear piercing | @a
+в брови | eyebrow piercing | @b
+под бровью | anti-eyebrow piercing | @b
+в веке | eyelid piercing | @b
+в губе | lip piercing | @b
+лабрет | labret piercing | @b
+в носу | nose piercing | @b
+в переносице | bridge piercing | @b
+в языке | tongue piercing | @b
+в шее | neck piercing | @c
+в ключице | collarbone piercing | @c
+в пупке | navel piercing | @c
+в спине | back piercing | @c
+корсетный | corset piercing | @c
+в крыле | wing piercing | @c
+пирсинг хвоста | tail piercing | @c
+серьги | earrings | @d
+одна серьга | single earring | @d
+ожерелье | necklace | @d
+украшения | jewelry | @d
+
+-- beast_traits | Звериные черты | мульти
+когти | claws
+лапы | paws
+пушистость | fluffy
+мех на теле | body fur
+фурри | furry
+усы (звериные) | whiskers
+чешуя | scales
+плавники | fins
+жабры | gills
+перепончатые руки | webbed hands
+
+
+== head | Голова | HEAD
+
+-- ears | Уши | мульти
+~ a=Звериные; b=Другие; c=Франшизы
+звериные уши | animal ears | @a
+кошачьи уши | cat ears | @a
+собачьи уши | dog ears | @a
+лисьи уши | fox ears | @a
+кроличьи уши | rabbit ears | @a
+волчьи уши | wolf ears | @a
+медвежьи уши | bear ears | @a
+лошадиные уши | horse ears | @a
+коровьи уши | cow ears | @a
+оленьи уши | deer ears | @a
+мышиные уши | mouse ears | @a
+овечьи уши | sheep ears | @a
+тигриные уши | tiger ears | @a
+рысьи уши | lynx ears | @a *
+уши пантеры | panther ears | @a
+львиные уши | lion ears | @a
+енотовые уши | raccoon ears | @a
+беличьи уши | squirrel ears | @a
+козьи уши | goat ears | @a
+свиные уши | pig ears | @a
+уши летучей мыши | bat ears | @a
+уши панды | panda ears | @a
+уши хорька | ferret ears | @a
+обезьяньи уши | monkey ears | @a
+уши кенгуру | kangaroo ears | @a *
+кемономими | kemonomimi mode | @b
+накладные ушки | fake animal ears | @b
+висячие уши | floppy ears | @b
+острые уши | pointy ears | @b
+длинные острые уши | long pointy ears | @b
+робо-уши | robot ears | @b
+дополнительные уши | extra ears | @b
+аксолотля | axolotl ears | @a *
+уши из волос | hair ears | @b
+надрез на ухе | notched ear | @b
+уши пикачу | pikachu ears | @c
+уши иви | eevee ears | @c
+уши шакалы | jackal ears | @a
+уши снежного барса | snow leopard ears | @a
+уши ягуара | jaguar ears | @a
+уши ласки | weasel ears | @a
+уши гиены | hyena ears | @a
+уши тапира | tapir ears | @a
+уши совиные | owl ears | @a
+уши альпаки | alpaca ears | @a
+уши выдры | otter ears | @a
+уши леопарда | leopard ears | @a
+уши красной панды | red panda ears | @a
+уши лосиные | moose ears | @a
+уши бурундука | chipmunk ears | @a
+уши жирафьи | giraffe ears | @a
+уши хомячьи | hamster ears | @a
+уши бобровые | beaver ears | @a
+уши бегемота | hippopotamus ears | @a
+уши морского слизня | sea slug ears | @a
+уши зебры | zebra ears | @a
+уши суриката | meerkat ears | @a
+уши шиншиллы | chinchilla ears | @a
+уши тасманского дьявола | tasmanian devil ears | @a
+уши муравьеда | anteater ears | @a
+уши скунса | skunk ears | @a
+уши слоновьи | elephant ears | @a
+уши газели | gazelle ears | @a
+уши ослиные | donkey ears | @a
+уши кабаньи | boar ears | @a
+уши антилопы | antelope ears | @a
+уши тамандуа | tamandua ears | @a
+уши носорога | rhinoceros ears | @a
+уши барсучьи | badger ears | @a
+уши броненосца | armadillo ears | @a
+уши верблюжьи | camel ears | @a
+уши капибары | capybara ears | @a
+уши опоссума | possum ears | @a
+уши лемура | lemur ears | @a
+уши окапи | okapi ears | @a
+уши сурка | marmot ears | @a
+уши панголина | pangolin ears | @a *
+уши дикобраза | porcupine ears | @a *
+птичьи уши | bird ears | @a
+механические уши | mechanical ears | @b
+драконьи уши | dragon ears | @a
+огненные уши | fiery ears | @b
+светящиеся уши | glowing ears | @b
+вислоухие кроличьи | lop rabbit ears | @a
+большие уши | large ears | @b
+нарисованные уши | drawn ears | @b
+поникшие уши | droopy ears | @b
+очень длинные уши | very long ears | @b
+комично большие уши | comically large ears | @b
+хлопающие уши | flapping ears | @b
+отдельно парящие уши | detached ears | @b
+огромные уши | huge ears | @b
+несколько пар ушей | multiple animal ears | @b
+асимметричные уши | asymmetrical ears | @b *
+накладные острые | fake pointy ears | @b *
+без ушей | no ears | @b
+гепард: уши | cheetah ears | @a
+американская кошка: уши | american curl cat ears | @a
+бомбейская кошка: уши | bombay cat ears | @a
+мейн-кун: уши | maine coon cat ears | @a
+сомалийская кошка: уши | somali cat ears | @a
+чёрная пантера: уши | black panther ears | @a
+сервал: уши | serval ears | @a
+полосатая кошка: уши | striped cat ears | @a
+пушистая кошка: уши | fluffy cat ears | @a
+пума: уши | puma ears | @a
+леопон: уши | leopon ears | @a
+трёхцветная кошка: уши | calico cat ears | @a
+чёрно-белая кошка: уши | tuxedo cat ears | @a
+табби: уши | tabby cat ears | @a
+сфинкс: уши | sphynx cat ears | @a
+бульдог: уши | bulldog ears | @a
+гиеновидная собака: уши | african wild dog ears | @a
+койот: уши | coyote ears | @a
+афганская борзая: уши | afghan hound ears | @a
+акита-ину: уши | akita inu ears | @a
+австралийский келпи: уши | australian kelpie ears | @a
+бассет-хаунд: уши | basset hound ears | @a
+бигль: уши | beagle ears | @a
+бернский зенненхунд: уши | bernese mountain dog ears | @a
+бордер-колли: уши | border collie ears | @a
+борзая: уши | borzoi ears | @a
+бостон-терьер: уши | boston terrier ears | @a
+терьер: уши | terrier ears | @a
+колли: уши | collie ears | @a
+австралийская овчарка: уши | australian shepherd ears | @a
+шелти: уши | shetland sheepdog ears | @a
+спаниель: уши | spaniel ears | @a
+аляскинский маламут: уши | alaskan malamute ears | @a
+пули: уши | puli ears | @a
+такса: уши | dachshund ears | @a
+чихуахуа: уши | chihuahua ears | @a
+китайская хохлатая собака: уши | chinese crested dog ears | @a
+чау-чау: уши | chow chow ears | @a
+доберман: уши | dobermann ears | @a
+английский спрингер-спаниель: уши | english springer spaniel ears | @a
+грейхаунд: уши | greyhound ears | @a
+золотистый ретривер: уши | golden retriever ears | @a
+немецкий дог: уши | great dane ears | @a
+ирландский сеттер: уши | irish setter ears | @a
+бобтейл: уши | old english sheepdog ears | @a
+померанский шпиц: уши | pomeranian ears | @a
+пудель: уши | poodle ears | @a
+мопс: уши | pug ears | @a
+шнауцер: уши | schnauzer ears | @a
+сиба-ину: уши | shiba inu ears | @a
+сенбернар: уши | st bernard ears | @a
+вельш-корги: уши | welsh corgi ears | @a
+йоркширский терьер: уши | yorkshire terrier ears | @a
+белая сова: уши | snowy owl ears | @a
+филин: уши | eagle owl ears | @a
+сова-сипуха: уши | barn owl ears | @a
+роющая сова: уши | burrowing owl ears | @a
+крыса: уши | rat ears | @a
+тушканчик: уши | jerboa ears | @a
+трубкозуб: уши | aardvark ears | @a
+коати: уши | coati ears | @a
+квокка: уши | quokka ears | @a
+ёжик: уши | hedgehog ears | @a
+мангуст: уши | mongoose ears | @a
+опоссум: уши | opossum ears | @a
+фенек: уши | fennec ears | @a
+песец: уши | arctic fox ears | @a
+горилла: уши | gorilla ears | @a
+бизон: уши | bison ears | @a
+бык: уши | bull ears | @a
+пони: уши | pony ears | @a
+белый медведь: уши | polar bear ears | @a
+коала: уши | koala ears | @a
+кобра: уши | cobra ears | @a
+кицунэ: уши | kitsune ears | @a
+единорог: уши | unicorn ears | @a
+пегас: уши | pegasus ears | @a
+цилинь: уши | qilin ears | @a
+пушок в ушках | ear fluff | @b
+короткие ушки | short ears | @b
+длинные ушки | long ears | @b
+
+-- horns | Рога | мульти
+~ a=Общее; b=Типы; c=Аксессуары; d=Особенности; e=Действия
+рога | horns | @a
+один рог | single horn | @a
+много рогов | multiple horns | @a
+демонические рога | demon horns | @b
+драконьи рога | dragon horns | @b
+рога восточного дракона | eastern dragon horns | @b
+козьи рога | goat horns | @b
+бараньи рога | sheep horns | @b
+коровьи рога | cow horns | @b
+закрученные рога | curled horns | @d
+конические рога | cone horns | @b
+ветвистые рога | antlers | @b
+рога оленя | deer antlers | @b
+лосиные рога | moose antlers | @b
+рога северного оленя | reindeer antlers | @b
+жирафьи рожки | giraffe horns | @b
+механические рога | mechanical horns | @d
+рога под кожей | skin-covered horns | @d
+рога-ветви | tree horns | @d
+кристальные рога | crystal horns | @d
+бант на роге | horn bow | @c
+украшение на рогах | horn ornament | @c
+лента на рогах | horn ribbon | @c
+кольцо на роге | horn ring | @c
+асимметричные рога | asymmetrical horns | @d
+разные рога | mismatched horns | @d
+неровные рога | uneven horns | @d
+сломанный рог | broken horn | @d
+сломанные рога | broken horns | @d
+сломанный ветвистый рог | broken antler | @d
+накладные рога | fake horns | @c
+накладные ветвистые рога | fake antlers | @c
+рога из волос | hair horns | @d
+огненные рога | fiery horns | @d
+светящиеся рога | glowing horns | @d
+светящиеся ветвистые рога | glowing antlers | @d
+рога вперёд | forward-facing horns | @d
+рога назад | backward-facing horns | @d
+огромные рога | huge horns | @d
+длинные рога | long horns | @d
+низкие рога | low horns | @d
+полупрозрачные рога | see-through horns | @d
+держится за рога | holding own horns | @e
+держит чужие рога | holding another's horns | @e
+рога сквозь убор | horns through headwear | @c
+рога они | oni horns | @b
+рог единорога | unicorn horn | @b
+рога антилопы | antelope horns | @b
+ледяные рога | ice horns | @d
+рога газели | gazelle horns | @b
+рог жука | beetle horn | @b *
+рог-бурав | drill horn | @d *
+рог на носу | nose horn | @d *
+энергетические рога | energy horns | @d *
+рога-лезвия | blade horns | @d *
+костяные рога | bone horns | @d *
+растительные рога | plant horns | @d *
+рога-щупальца | tentacle horns | @d *
+рога динозавра | dinosaur horns | @b *
+рога членистоногого | arthropod horns | @b *
+жидкие рога | liquid horns | @d *
+маленькие рожки | small horns | @d
+большие рога | large horns | @d
+изогнутые рога | curved horns | @d
+щербатые рога | chipped horns | @d
+шипастые рога | spiked horns | @d
+нарисованные рога | drawn horns | @d
+отдельно парящие рога | detached horns | @d
+лишние рога | extra horns | @a
+двусторонние рога | two-sided horns | @d
+спиральный рог | spiral horn | @d
+рога вбок | side horns | @d
+голографические рога | holographic horns | @d *
+шрам на роге | scar on horns | @d *
+разнородные рога | mixed horns | @d *
+блестящие рога | shiny horns | @d *
+рога у глазниц | horns on eye sockets | @d *
+рога с узором | print horns | @d *
+отрубленный рог | severed horn | @d *
+рога в клетку | checkered horns | @d *
+без рогов | no horns | @a
+жук-носорог: рога | rhinoceros beetle horn | @b
+жук-олень: рога | stag beetle horns | @b
+бизон: рога | bison horns | @b
+бык: рога | bull horns | @b
+олень: рога | deer horns | @b
+носорог: рога | rhinoceros horn | @b
+лось: рога | moose horns | @b
+нарвал: рога | narwhal horn | @b
+китайский дракон: рога | chinese dragon horns | @b
+цилинь: рога | qilin horns | @b
+
+-- halo | Нимб | мульти
+~ a=Общее; b=Форма; c=Положение и эффекты
+нимб | halo | @a
+классический нимб | traditional halo | @a
+сломанный нимб | broken halo | @c
+глитч-нимб | glitched halo | @c
+нимб-полумесяц | crescent halo | @b
+нимб-крест | cross halo | @b
+осквернённый нимб | corrupted halo | @c
+двойной нимб | double halo | @b
+нарисованный нимб | drawn halo | @c
+бутафорский нимб | fake halo | @a
+пылающий нимб | flaming halo | @c
+жидкий нимб | liquid halo | @c
+кровавый нимб | blood halo | @c
+механический нимб | mechanical halo | @b
+тающий нимб | melting halo | @c
+нимб-офаним | ophanim halo | @b
+прямоугольный нимб | rectangular halo | @b
+шипастый нимб | spiked halo | @b
+нимб-звезда | star halo | @b
+нимб-сердце | heart halo | @b
+нимб-треугольник | triangle halo | @b
+двусторонний нимб | two-sided halo | @b
+крылатый нимб | winged halo | @b
+нимб за головой | halo behind head | @c
+наклонённый нимб | tilted halo | @c
+держит нимб | holding halo | @c
+светящийся нимб | glowing halo | @c
+искажённый нимб | distorted halo | @c
+тусклый нимб | faded halo | @c
+нимб сбоку | side halo | @c
+размытый нимб | blurry halo | @c
+нимб с помехами | noised halo | @c
+цветочный нимб | flower halo | @b
+нимб-снежинка | snowflake halo | @b
+солнечный нимб | sun halo | @b *
+железный нимб | iron halo | @b *
+нимб-шестерня | gear halo | @b *
+нимб-пончик | donut halo | @b *
+металлический нимб | metal halo | @b *
+нимб-облако | cloud halo | @b *
+меховой нимб | fur halo | @b *
+нимб-диск | cd halo | @b *
+нимб-верёвка | rope halo | @b *
+прозрачный нимб | transparent halo | @c *
+ромбовидный нимб | diamond halo | @b *
+водяной нимб | water halo | @c *
+костяной нимб | bone halo | @b *
+огненный нимб | fire halo | @c *
+нимб из листьев | leaf halo | @b *
+нимб-венок | wreath halo | @b *
+
+-- mushroom_cap | Шапочка гриба | мульти
+~ a=Общее
+шапочка гриба | mushroom hat | @a
+
+-- headless | Вместо головы | мульти
+~ a=Дополнительно; b=Вместо головы; c=Скрыта
+без головы | headless | @b
+без шеи | neckless | @a *
+предмет вместо головы | object head | @b
+звериная голова | animal head | @b
+пылающая голова | flaming head | @b
+череп вместо головы | skull head | @b
+голова-маскот | mascot head | @b
+тыква вместо головы | jack-o'-lantern head | @b
+механическая голова | mechanical head | @b
+кроличья голова | rabbit head | @b
+рыбья голова | fish head | @b
+мешок на голове | bag over head | @c
+
+
+== eyes | Глаза | EYES
+
+-- eye_color | Цвет глаз | один | open
+~ a=Основные; b=Мультицвет
+бирюзовые | aqua eyes | @a #aqua
+чёрные | black eyes | @a #black
+синие | blue eyes | @a #blue
+карие | brown eyes | @a #brown
+зелёные | green eyes | @a #green
+серые | grey eyes | @a #grey
+оранжевые | orange eyes | @a #orange
+фиолетовые | purple eyes | @a #purple
+розовые | pink eyes | @a #pink
+красные | red eyes | @a #red
+белые | white eyes | @a #white
+жёлтые | yellow eyes | @a #yellow
+гетерохромия | heterochromia | @b #blue/green
+разноцветные | multicolored eyes | @b #rainbow
+градиентные | gradient eyes | @b #purple>pink
+двухцветные | two-tone eyes | @b #blue/red
+радужные | rainbow eyes | @b #rainbow
+
+-- pupils | Зрачки | мульти
+~ a=Цвет; b=Форма; c=Символы
+бирюзовые зрачки | aqua pupils | @a #aqua
+синие зрачки | blue pupils | @a #blue
+карие зрачки | brown pupils | @a #brown
+зелёные зрачки | green pupils | @a #green
+серые зрачки | grey pupils | @a #grey
+оранжевые зрачки | orange pupils | @a #orange
+розовые зрачки | pink pupils | @a #pink
+фиолетовые зрачки | purple pupils | @a #purple
+красные зрачки | red pupils | @a #red
+белые зрачки | white pupils | @a #white
+чёрные зрачки | black pupils | @a #black
+жёлтые зрачки | yellow pupils | @a #yellow
+суженные зрачки | constricted pupils | @b
+расширенные зрачки | dilated pupils | @b
+дополнительные зрачки | extra pupils | @b
+горизонтальные зрачки | horizontal pupils | @b
+без зрачков | no pupils | @b
+прямоугольные зрачки | rectangular pupils | @b
+щелевые зрачки | slit pupils | @b
+разные зрачки | mismatched pupils | @b
+зрачки-символы | symbol-shaped pupils | @c
+зрачки-сердечки | heart-shaped pupils | @c
+зрачки-звёздочки | star-shaped pupils | @c
+зрачки-круги | solid circle pupils | @b
+зрачки-ромбики | diamond-shaped pupils | @c
+зрачки-крестики | cross-shaped pupils | @c
+зрачки-прицелы | crosshair pupils | @c
+зрачки-X | x-shaped pupils | @c
+зрачки-цветочки | flower-shaped pupils | @c
+зрачки-клевер | clover-shaped pupils | @c
+зрачки-ростки | sprout-shaped pupils | @c
+зрачки-полумесяцы | crescent-shaped pupils | @c
+зрачки-луны | moon-shaped pupils | @c
+зрачки-снежинки | snowflakes-shaped pupils | @c
+зрачки-молнии | lightning bolt-shaped pupils | @c
+зрачки-нотки | musical note-shaped pupils | @c
+денежные зрачки | money-shaped pupils | @c
+зрачки-шестерёнки | gear-shaped pupils | @c
+зрачки-черепа | skull-shaped pupils | @c
+зрачки-косточки | bone-shaped pupils | @c
+зрачки-лапки | paw-shaped pupils | @c
+кошачьи зрачки | cat-shaped pupils | @c
+зрачки-кролики | rabbit-shaped pupils | @c
+зрачки-бабочки | butterfly-shaped pupils | @c
+глаза-часы | clock eyes | @c
+капли | drop-shaped pupils | @c
+знак питания | power symbol-shaped pupils | @c
+квадратные | square pupils | @b
+треугольники | triangle-shaped pupils | @c
+точки | dot pupils | @b
+рыбки | fish-shaped pupils | @c
+снежинки | snowflake pupils | @c
+чёрные дыры | black hole-shaped pupils | @c
+знак радиации | radiation symbol-shaped pupils | @c *
+пики | spade-shaped pupils | @c *
+медвежата | bear-shaped pupils | @c *
+короны | crown-shaped pupils | @c *
+трефы | club-shaped pupils | @c *
+замочные скважины | keyhole pupils | @c *
+бантики | bow-shaped pupils | @c *
+инь-ян | yin yang-shaped pupils | @c *
+паутинки | spider web-shaped pupils | @c *
+шестиугольники | hexagon-shaped pupils | @c *
+анкхи | ankh-shaped pupils | @c *
+светлые зрачки | bright pupils | @b
+светящиеся зрачки | glowing pupils | @b
+
+-- sclera | Склера | мульти
+~ a=Цвет; b=Особое
+бирюзовая склера | aqua sclera | @a #aqua
+чёрная склера | black sclera | @a #black
+синяя склера | blue sclera | @a #blue
+коричневая склера | brown sclera | @a #brown
+зелёная склера | green sclera | @a #green
+серая склера | grey sclera | @a #grey
+оранжевая склера | orange sclera | @a #orange
+розовая склера | pink sclera | @a #pink
+фиолетовая склера | purple sclera | @a #purple
+красная склера | red sclera | @a #red
+жёлтая склера | yellow sclera | @a #yellow
+разная склера | mismatched sclera | @b
+без склеры | no sclera | @b
+пустые глаза | blank eyes | @b
+сплошные глаза | solid eyes | @b
+налитые кровью глаза | bloodshot eyes | @b
+
+-- eye_features | Особенности глаз | мульти
+~ a=Радужка; b=Вокруг глаз; c=Ресницы; d=Цвет ресниц; e=Особое; f=Стилизованные; g=Количество
+разные радужки | mismatched irises | @a
+пунктирные глаза | dashed eyes | @f
+глаза-пакман | pac-man eyes | @f
+кольцевые радужки | ringed eyes | @a
+глаза-закорючки | squiggle eyes | @f
+мешки под глазами | bags under eyes | @b
+эгё-саль | aegyo sal | @b
+синяк под глазом | bruised eye | @b
+светящиеся глаза | glowing eyes | @e
+светящийся глаз | glowing eye | @e
+пылающие глаза | flaming eyes | @e
+электрические глаза | electric eyes | @e
+ресницы (акцент) | eyelashes | @c
+длинные ресницы | long eyelashes | @c
+густые ресницы | thick eyelashes | @c
+цветные ресницы | colored eyelashes | @d
+белые ресницы | white eyelashes | @d
+накладные ресницы | fake eyelashes | @c
+глаза сквозь волосы | eyes visible through hair | @e
+глаза-пуговицы | button eyes | @f
+глаза осьминога | cephalopod eyes | @e
+фасеточные глаза | compound eyes | @e
+глаз-линза | lens eye | @e
+пиксельные глаза | pixel eyes | @f
+механические глаза | mechanical eyes | @e
+стеклянный глаз | glass eye | @e
+один механический глаз | single mechanical eye | @e
+выпученные глаза | bulging eyes | @f
+безумные глаза | crazy eyes | @e
+пустой взгляд | empty eyes | @e
+сверкающие глаза | flashing eyes | @e
+глаза-сердечки | heart-shaped eyes | @f
+глаза-точки | solid circle eyes | @f
+глаза-овалы | solid oval eyes | @f
+глаза-спирали | spiral-only eyes | @f
+дзитомэ (полуприкрытый) | jitome | @f
+тарэмэ (мягкие) | tareme | @f
+цуримэ (острые) | tsurime | @f
+острый взгляд | sharp eyes | @f *
+санпаку | sanpaku | @e
+монолиды | monolids | @e
+искрящиеся глаза | sparkling eyes | @e
+нет одного глаза | missing eye | @g
+одноглазость | one-eyed | @g
+третий глаз | third eye | @g
+дополнительные глаза | extra eyes | @g
+без глаз | no eyes | @g
+неровные глаза | uneven eyes | @e
+V-образные глаза | v-shaped eyes | @f
+пустые глазницы | hollow eyes | @e
+волнистые глаза | wavy eyes | @f
+широкие овальные | wide oval eyes | @f
+взрослый взгляд | mature eyes | @e
+блестящие глаза | shiny eyes | @e
+глаза-пуговки | googly eyes | @f
+злые глаза | evil eyes | @e
+текст в глазах | text in eyes | @e
+слишком много глаз | too many eyes | @g
+очень большие глаза | very big eyes | @f
+мистические глаза | mystic eyes | @e
+жуткие глаза | creepy eyes | @e
+глаза Persona | persona eyes | @e
+асимметричные глаза | asymmetrical eyes | @e
+нарисованные глаза | drawn eyes | @f
+четыре глаза | four eyes | @g
+квадратные глаза | square eyes | @f
+разные глаза | mismatched eyes | @e
+отдельно парящие глаза | detached eyes | @e
+плавящиеся глаза | melting eyes | @e
+прямоугольные глаза | rectangular eyes | @f
+размытые глаза | blurry eyes | @e *
+глаза-самоцветы | gem eyes | @e *
+глаза-символы | symbol-shaped eyes | @f *
+узорные глаза | patterned eyes | @e *
+глаза на стебельках | stalk eyes | @e *
+глаза-помехи | static eyes | @e *
+запавшие глаза | sunken eyes | @e *
+оленьи глаза | doe eyes | @f *
+молочные глаза | milky eyes | @e *
+ромбовидные глаза | diamond eyes | @f *
+
+-- eye_state | Состояние глаз | мульти
+~ a=Закрытые; b=Прикрытые
+моргает | blinking | @a
+закрытые глаза | closed eyes | @a
+один глаз закрыт | one eye closed | @a
+полузакрытые глаза | half-closed eyes | @a
+жмурится | wince | @a
+прикрывает глаза | covering own eyes | @b
+волосы на глазах | hair over eyes | @b
+волосы на один глаз | hair over one eye | @b
+бинт на глазу | bandage over one eye | @b
+повязка на глазах | blindfold | @b
+глазная повязка | eyepatch | @b
+шляпа на глаза | hat over eyes | @b
+глаза не видны | hidden eyes | @b
+
+-- gaze | Взгляд | мульти
+~ a=Направление; b=Действия
+смотрит на зрителя | looking at viewer | @a
+смотрит в сторону | looking to the side | @a
+отводит взгляд | looking away | @a
+оглядывается | looking back | @a
+смотрит вниз | looking down | @a
+смотрит вверх | looking up | @a
+смотрит на другого | looking at another | @a
+зрительный контакт | eye contact | @a
+смотрит вдаль | looking afar | @a
+осматривается | looking around | @b
+смотрит в зеркало | looking at mirror | @b
+смотрит в телефон | looking at phone | @b
+смотрит поверх очков | looking over eyewear | @b
+прячет взгляд | averting eyes | @b
+косит глазами | cross-eyed | @b
+прищур | narrowed eyes | @b
+закатывает глаза | rolling eyes | @b
+косой взгляд | sideways glance | @b
+щурится | squinting | @b
+пристальный взгляд | staring | @b
+широко раскрытые глаза | wide-eyed | @b
+неестественно открытые | unusually open eyes | @b
+взгляд исподлобья | upturned eyes | @b
+умоляющий взгляд | pleading eyes | @b
+акцент на глазах | eye focus | @b
+потупленный взгляд | downcast eyes | @b
+
+
+== face | Лицо | FACE & EXPRESSION
+
+-- emotions | Эмоции | мульти
+~ a=Эмоции; b=Шок и страх
+злость | angry | @a
+вена гнева | anger vein | @a
+раздражение | annoyed | @a
+стиснутые зубы | clenched teeth | @a
+свирепый взгляд | glaring | @a
+хмурый вид | scowl | @a
+румянец | blush | @a
+румянец-наклейки | blush stickers | @a
+смущение | embarrassed | @a
+краснеет всем лицом | full-face blush | @a
+румянец на носу | nose blush | @a
+скука | bored | @a
+уверенность | confident | @a
+растерянность | confused | @a
+безумие | crazy | @a
+отчаяние | despair | @a
+решимость | determined | @a
+разочарование | disappointed | @a
+презрение | disdain | @a
+отвращение | disgust | @a
+страдание | distress | @a
+опьянение | drunk | @a
+зависть | envy | @a
+восторг | excited | @a
+изнеможение | exhausted | @a
+без эмоций | expressionless | @a
+фейспалм | facepalm | @a
+смятение | flustered | @a
+досада | frustrated | @a
+нахмуренный лоб | furrowed brow | @a
+гримаса | grimace | @a
+счастье | happy | @a
+одиночество | lonely | @a
+нервозность | nervous | @a
+боль | pain | @a
+надутые губы | pout | @a
+надутые щёки | puffy cheeks | @a
+поднятая бровь | raised eyebrow | @a
+грусть | sad | @a
+подавленность | depressed | @a
+насупленность | frown | @a
+мрачность | gloom (expression) | @a
+слёзы | tears | @a
+испуг | scared | @b
+паника | panicking | @b
+тревога | worried | @b
+серьёзность | serious | @a
+тень на лице | shaded face | @a
+стеснение | shy | @a
+вздох | sigh | @a
+скепсис | skeptical | @a
+сонливость | sleepy | @a
+дуется | sulking | @a
+удивление | surprised | @b
+задумчивость | thinking | @a
+раздумья | pensive | @a
+недовольство | unamused | @a
+V-образные брови | v-shaped eyebrows | @a
+кровь из носа | nosebleed | @a
+напряжение | struggling | @a
+побледнение | color drain | @b
+ужас | horrified | @b
+крик | screaming | @b
+рыдания | sobbing | @a
+шоковая травма | traumatized | @b
+бледнеет | turn pale | @b
+
+-- smiles | Улыбки | мульти
+~ a=Улыбки; b=Самодовольство
+улыбка | smile | @a
+улыбка :D | :D | @a
+широкая ухмылка | grin | @a
+злобная ухмылка | evil grin | @a
+злобная улыбка | evil smile | @a
+безумная улыбка | crazy smile | @a
+улыбка пальцами | fingersmile | @a
+натянутая улыбка | forced smile | @a
+лёгкая улыбка | light smile | @a
+грустная улыбка | sad smile | @a
+соблазнительная улыбка | seductive smile | @a
+сдержанный смех | stifled laugh | @a
+улыбка Глазго | glasgow smile | @a
+самодовольство | smug | @b
+усмешка | smirk | @b
+доягао | doyagao | @b
+троллфейс | troll face | @b
+
+-- emoticons | Эмотиконы | мульти
+;) | ;)
+XD | XD
+D: | D:
+:3 | :3
+:p | :p
+:q | :q
+:t | :t
+:/ | :/
+:| | :|
+:c | :c
+:< | :<
+:> | :>
+:o | :o
+o3o | o3o
+uwu | uwu
+0w0 | 0w0
+^_^ | ^_^
+>_< | >_<
+@_@ | @_@
++_+ | +_+
+=_= | =_=
+T_T | T_T
+x_x | x_x
+o_o | o_o
+рот-крестик | x mouth
+x3 | x3
+DX | DX
+0_0 | 0_0
+3_3 | 3_3
+6_9 | 6_9
+
+-- eyebrows | Брови | мульти
+брови (акцент) | eyebrows
+брови под волосами | eyebrows hidden by hair
+разные брови | mismatched eyebrows
+густые брови | thick eyebrows
+поднятые брови | raised eyebrows
+хикимаю | hikimayu
+
+-- mouth | Рот | мульти
+открытый рот | open mouth
+приоткрытые губы | parted lips
+закрытый рот | closed mouth
+губы (акцент) | lips
+рот-каштан | chestnut mouth
+рот-ромб | diamond mouth
+рот-точка | dot mouth
+рот-сердечко | heart-shaped mouth
+полый рот | hollow mouth
+без рта | no mouth
+рот-треугольник | triangle mouth
+волнистый рот | wavy mouth
+рот набок | sideways mouth
+язык | tongue
+высунутый язык | tongue out
+длинный язык | long tongue
+клычок | fang
+клыки | fangs
+клычок наружу | fang out
+кривой клычок | snaggletooth
+бивни | tusks
+острые зубы | sharp teeth
+зубы | teeth
+зуб | tooth
+торчащие зубы | buck teeth
+круглые зубы | round teeth
+только верхние зубы | upper teeth only
+только нижние зубы | lower teeth only
+
+-- face_misc | Лицо: прочее | мульти
+~ a=Прочее; b=Растительность
+нос (акцент) | nose | @a
+нос-точка | dot nose | @a
+без носа | no nose | @a
+без лица | faceless | @a
+моб-лицо | mob face | @a
+пустое лицо | void face | @a
+несколько выражений | multiple expressions | @a
+борода | beard | @b
+усы | mustache | @b
+эспаньолка | goatee | @b
+щетина | stubble | @b
+бакенбарды | sideburns | @b
+растительность на лице | facial hair | @b
+
+-- makeup | Макияж | мульти
+макияж | makeup
+румяна | rouge (makeup)
+хайлайтер | highlighter (makeup)
+бронзер | bronzer
+глиттер | glitter makeup
+гяру-макияж | gyaru makeup
+фейс-арт | facepaint
+стразы на лице | face jewel
+
+-- lip_makeup | Макияж губ | мульти
+помада | lipstick
+блеск для губ | lipgloss
+красные губы | red lips | #red
+розовые губы | pink lips | #pink
+чёрные губы | black lips | #black
+фиолетовые губы | purple lips | #purple
+синие губы | blue lips | #blue
+белые губы | white lips | #white
+разноцветные губы | multicolored lips | #rainbow
+
+-- eye_makeup | Макияж глаз | мульти
+подводка | eyeliner
+тушь | mascara
+тени | eyeshadow
+тени под глазом | eyeshadow under eye
+смоки айс | smokey eyeshadow
+красные тени | red eyeshadow | #red
+розовые тени | pink eyeshadow | #pink
+синие тени | blue eyeshadow | #blue
+фиолетовые тени | purple eyeshadow | #purple
+зелёные тени | green eyeshadow | #green
+чёрные тени | black eyeshadow | #black
+разноцветные тени | multicolored eyeshadow | #rainbow
+
+-- nails | Маникюр / педикюр | мульти
+лак на ногтях | nail polish
+нейл-арт | nail art
+накладные ногти | fake nails
+длинные ногти | long fingernails
+острые ногти | sharp fingernails
+педикюр | toenail polish
+
+
+== hair | Волосы | HAIR
+
+-- hair_color | Цвет волос | один | open
+бирюзовые | aqua hair | #aqua
+чёрные | black hair | #black
+блонд | blonde hair | #blonde
+синие | blue hair | #blue
+каштановые | brown hair | #brown
+зелёные | green hair | #green
+серые | grey hair | #grey
+оранжевые | orange hair | #orange
+розовые | pink hair | #pink
+фиолетовые | purple hair | #purple
+красные | red hair | #red
+белые | white hair | #white
+радужные | rainbow hair | #rainbow
+
+-- hair_pattern | Узор волос | один
+двухцветные | two-tone hair | #blue/red
+пробор надвое | split-color hair | #blue/red
+градиентные | gradient hair | #purple>pink
+разноцветные | multicolored hair | #rainbow
+мелирование | streaked hair
+цветные кончики | colored tips
+цветные пряди внутри | colored inner hair
+цветная чёлка | colored bangs
+полосатые | striped hair
+пятнистые | spotted hair
+отросшие корни | roots (hair)
+узорные | patterned hair
+
+-- hair_length | Длина волос | один
+очень короткие | very short hair
+короткие | short hair
+средние | medium hair
+длинные | long hair
+очень длинные | very long hair
+абсурдно длинные | absurdly long hair
+пышные | big hair
+лысый | bald
+лысая | bald female | F
+залысины | balding
+залысина | bald spot
+
+-- haircut | Стрижка | один
+~ a=Стрижки; b=Объёмные
+под машинку | buzz cut | @a
+ёжик | crew cut | @a
+пикси | pixie cut | @a
+каре | bob cut | @a
+удлинённое каре | inverted bob | @a
+горшок | bowl cut | @a
+андеркат | undercut | @a
+площадка | flattop | @a
+короткие с длинными прядями | short hair with long locks | @a
+волчья стрижка | wolf cut | @a
+химэ-кат | hime cut | @a
+стрижка-медуза | jellyfish cut | @a
+маллет | mullet | @a
+афро | afro | @b
+огромное афро | huge afro | @b
+причёска-улей | beehive hairdo | @b
+помпадур | pompadour | @b
+кифф | quiff | @b
+ирокез | mohawk | @a
+мидзура | mizura | @b
+тёнмагэ | chonmage | @b
+кацуяма-магэ | katsuyamamage | @b
+нихонгами | nihongami | @b
+марумагэ | marumage | @b
+шуанъяцзи | shuangyaji | @b
+оселедец | oseledets | @a *
+фэйсяньцзи | feixianji | @b *
+санту | sangtu | @b *
+тясэн-магэ | chasenmage | @b *
+симада с бантом | bow shimada | @b *
+даньяцзи | danyaji | @b *
+фукумагэ | fukumage | @b *
+каравамагэ | karawamage | @b *
+юивата | yuiwata | @b *
+лянбатоу | liangbatou | @b *
+лоцзи | luo ji | @b *
+двойной лоцзи | double luo ji | @b *
+сётэн-пегас | shouten pegasus mix mori | @b *
+юаньбао-цзи | yuanbao ji (hairstyle) | @b *
+цзингу-цзи | jinggu ji (hairstyle) | @b *
+сайдкат | sidecut | @a
+
+-- braids | Косы | мульти
+коса | braid
+коса в чёлке | braided bangs
+коса спереди | front braid
+боковая коса | side braid
+коса-корона | crown braid
+одна коса | single braid
+несколько кос | multiple braids
+две косы | twin braids
+две низкие косы | low twin braids
+три косы | tri braids
+четыре косы | quad braids
+коса-жгут | rope braid
+корнроу | cornrows
+дреды | dreadlocks
+бокс-брейды | box braids
+коса-хвост | braided ponytail
+полукоса | half up braid
+полукорона (коса) | half crown braid
+полусобранная коса | half up half down braid
+низкая коса (длинные) | low-braided long hair
+дреды в косах | braided dreadlocks | *
+французская коса | french braid | *
+голландская коса | dutch braid | *
+коса-водопад | waterfall braid | *
+рыбий хвост | fishtail braid | *
+французская коса-хвост | french braided ponytail | *
+
+-- buns | Пучки | мульти
+пучок | hair bun
+один пучок | single hair bun
+два пучка | double bun
+три пучка | triple bun
+плетёный пучок | braided bun
+пучок-конус | cone hair bun
+пучок-пончик | donut hair bun
+пучок-сердечко | heart hair bun
+кольца волос | hair rings
+одно кольцо волос | single hair ring
+кольца из кос | braided hair rings
+пучок с косой в основании | bun with braided base
+четыре кольца | quad hair rings
+банту (узелки) | bantu knots | *
+три кольца | tri hair rings | *
+боковой пучок | side bun
+высокий пучок | high bun | *
+низкий пучок | low bun | *
+чехол для пучка | bun cover
+
+-- ponytails | Хвосты (волосы) | мульти
+хвост | ponytail
+высокий хвост | high ponytail
+низкий хвост | low ponytail
+короткий хвост | short ponytail
+боковой хвост | side ponytail
+хвост спереди | front ponytail
+сложенный хвост | folded ponytail
+раздвоенный хвост | split ponytail
+полусобранные | half updo
+хвостик с одной стороны | one side up
+два хвостика сверху | two side up
+пучок-топнот | topknot
+два хвостика | twintails
+низкие хвостики | low twintails
+короткие хвостики | short twintails
+неровные хвостики | uneven twintails
+три хвоста | tri tails
+четыре хвоста | quad tails
+высокий боковой хвост | high side ponytail
+низкий боковой хвост | low side ponytail
+короткий боковой хвост | short side ponytail
+низко подвязанные длинные | low-tied long hair
+несколько перехватов | multi-tied hair
+пять хвостов | quin tails | *
+средние, низко собранные | low-tied medium hair
+длинный хвост | long ponytail | *
+собранные наверх | updo
+
+-- hair_texture | Текстура волос | мульти
+кудрявые | curly hair
+волнистые | wavy hair
+прямые | straight hair
+растрёпанные | messy hair
+лохматые | shaggy hair | *
+шипастые | spiked hair
+заострённые пряди | pointy hair
+пушистые | fluffy hair
+подкрученные | flipped hair
+локоны | ringlets
+букли | drill hair
+двойные букли | twin drills
+одна букля | single drill
+крылышки волос | hair flaps
+три букли | tri drills
+четыре букли | quad drills
+плоские пряди | kishimen hair
+хохолок | crested hair | *
+курчавые волосы | kinky hair
+пышные | puffy hair | *
+
+-- bangs | Чёлка | мульти
+~ a=Чёлка; b=Боковые пряди
+прямая чёлка | blunt bangs | @a
+чёлка дугой | arched bangs | @a
+асимметричная чёлка | asymmetrical bangs | @a
+чёлка набок | swept bangs | @a
+диагональная чёлка | diagonal bangs | @a
+рваная чёлка | choppy bangs | @a
+перекрещенная чёлка | crossed bangs | @a
+короткая чёлка | short bangs | @a
+длинная чёлка | long bangs | @a
+редкая чёлка | wispy bangs | @a
+разделённая чёлка | parted bangs | @a
+прядь между глаз | hair between eyes | @a
+пряди под глазами | bangs under eyes | @a
+шторки | curtained hair | @a
+заломы у лица | hair intakes | @a
+боковые пряди | sidelocks | @b
+длинные боковые пряди | long sidelocks | @b
+одна боковая прядь | single sidelock | @b
+асимметричные пряди | asymmetrical sidelocks | @b
+мыс вдовы | widow's peak | @a
+чёлка на два пробора | double-parted bangs | @a
+чёлка с центральным завитком | center-flap bangs | @a
+чёлка заколота назад | bangs pinned back | @a
+чёлка-клыки | fanged bangs | @a
+один залом чёлки | single hair intake | @a
+пряди-букли у лица | drill sidelocks | @b
+подвязанные пряди | low-tied sidelocks | @b
+пряди убраны назад | sidelocks tied back | @b
+монетка (чёлка) | coin bangs | @a *
+подстриженная чёлка | cut bangs | @a
+завёрнутая чёлка | flipped bangs | @a
+заправленная чёлка | loosely tucked bangs | @a
+неровная чёлка | uneven bangs | @a
+чёлка без боков | sideless bangs | @a
+острая чёлка | pointed bangs | @a *
+короткая растрёпанная | short messy bangs | @a *
+кудрявая чёлка | curly bangs | @a *
+растрёпанная чёлка | messy bangs | @a *
+торчащая чёлка | spiked bangs | @a *
+густая чёлка | thick bangs | @a *
+волнистая чёлка | wavy bangs | @a *
+пушистая чёлка | fluffy bangs | @a *
+заплетённые пряди | braided sidelocks | @b
+без чёлки | no bangs | @a *
+
+-- crown | Макушка и затылок | мульти
+~ a=Торчащая прядь; b=Пробор и зачёс
+ахоге | ahoge | @a
+ахоге-сердечко | heart ahoge | @a
+огромное ахоге | huge ahoge | @a
+антенки | antenna hair | @a
+зачёс | comb over | @b
+зачёсаны назад | hair pulled back | @b
+прилизаны назад | hair slicked back | @b
+пробор | parted hair | @b
+прядь на затылке | lone nape hair | @a
+прямой пробор | middle part | @b
+антенка-сердечко | heart antenna hair | @a
+вихор | cowlick | @a
+отдельное ахоге | detached ahoge | @a
+
+-- hair_misc | Волосы: прочее | мульти
+~ a=Состояние; b=Укладка; c=Украшения; d=Материал; e=Форма; f=Живые
+полупрозрачные | see-through hair | @d
+распущенные | hair down | @b
+собранные | hair up | @b
+асимметричные | asymmetrical hair | @e
+ровные концы | blunt ends | @e
+волосы через плечо | hair over shoulder | @b
+платок в волосах | hair scarf | @c
+трубки на прядях | hair tubes | @c
+цветок в волосах | hair flower | @c
+звёзды в волосах | star hair ornament | @c
+полумесяц в волосах | crescent hair ornament | @c
+волосы-щупальца | tentacle hair | @f
+прядь во рту | hair in own mouth | @a
+волосы цветком | flower-shaped hair | @e
+волосы бантом | bow-shaped hair | @e
+клевер (причёска) | four leaf clover hairstyle | @e *
+заячья причёска | rabbit hairstyle | @e *
+волосы звездой | star-shaped hair | @e *
+парящие волосы | floating hair | @a
+мокрые волосы | wet hair | @a
+огненные волосы | fiery hair | @d
+цепкие волосы | prehensile hair | @f
+живо реагирующие волосы | expressive hair | @f
+волосы-змеи | snake hair | @f
+светящиеся волосы | glowing hair | @d
+жидкие волосы | liquid hair | @d
+кристальные волосы | crystal hair | @d
+отдельная прядь | naturally detached hair | @e
+звёздные волосы | starry hair | @d
+сложенные волосы | folded hair | @b
+растительные волосы | plant hair | @d
+срезанные волосы | severed hair | @a
+высокая копна | tall hair | @e
+невозможные волосы | impossible hair | @e
+живые волосы | living hair | @f
+механические волосы | mechanical hair | @d
+волосы-еда | food-themed hair | @d
+волосы-кабели | cable hair | @d
+волосы-слизь | slime hair | @d
+металлические волосы | metal hair | @d
+волосы-облако | cloud hair | @d
+переливчатые волосы | iridescent hair | @d
+львиная грива | lion hair | @e
+волосы-перья | feather hair | @d
+волосы сердечком | heart-shaped hair | @e
+волосы треугольником | triangle-shaped hair | @e
+волосы кошачьими ушками | cat ear-shaped hair | @e
+волосы в горошек | polka dot hair | @d
+энергетические | energy hair | @d *
+лавовые | lava hair | @d *
+галактические | galaxy hair | @d *
+кровавые | blood hair | @d *
+песчаные | sand hair | @d *
+коралловые | coral hair | @d *
+пузырьковые | bubble hair | @d *
+шоколадные | chocolate hair | @d *
+трубки с рюшами | frilled hair tubes | @c
+лента на пряди | tress ribbon | @c
+бигуди | hair rollers | @c
+
+
+== wings_tails | Крылья и хвосты | WINGS & TAILS
+
+-- wings | Крылья | мульти
+~ a=Количество; b=Типы; c=Элементальные; d=Расположение; e=Предметы
+крылья | wings | @a
+несколько крыльев | multiple wings | @a
+одно крыло | single wing | @a
+огромные крылья | oversized wings | @a
+мини-крылья | mini wings | @a
+большие крылья | large wings | @a
+без крыльев | no wings | @a
+перьевые крылья | feathered wings | @b
+ангельские крылья | angel wings | @b
+птичьи крылья | bird wings | @b
+совиные крылья | owl wings | @b *
+демонические крылья | demon wings | @b
+драконьи крылья | dragon wings | @b
+крылья феи | fairy wings | @b
+крылья летучей мыши | bat wings | @b
+крылья насекомого | insect wings | @b
+крылья бабочки | butterfly wings | @b
+крылья стрекозы | dragonfly wings | @b
+крылья мотылька | moth wings | @b
+скелетные крылья | skeletal wings | @b
+механические крылья | mechanical wings | @b
+бутафорские крылья | fake wings | @e
+кристальные крылья | crystal wings | @c
+энергетические крылья | energy wings | @c
+огненные крылья | fiery wings | @c
+ледяные крылья | ice wings | @c
+растительные крылья | plant wings | @c
+крылья на голове | head wings | @d
+крылья в волосах | hair wings | @d
+крылья-уши | wing ears | @d
+низкие крылья | low wings | @d
+крылья на лодыжках | ankle wings | @d
+крылья на ногах | leg wings | @d
+крылатые руки | winged arms | @d
+парящие крылья | detached wings | @d
+пчелиные крылья | bee wings | @b
+крылья из листьев | leaf wings | @c
+цветочные крылья | flower wings | @c
+серафимские крылья | seraph wings | @b *
+крылья феникса | phoenix wings | @b *
+металлические крылья | metal wings | @b
+мультяшные крылья | cartoon wings | @b
+искусственные крылья | artificial wings | @b
+крылья-сердце | heart wings | @b
+когтистые крылья | clawed wings | @b *
+крылья-лезвия | blade wings | @b *
+крылья-щупальца | tentacle wings | @b *
+стихийные крылья | elemental wings | @c *
+асимметричные крылья | asymmetrical wings | @a
+расправленные крылья | spread wings | @a
+светящиеся крылья | glowing wings | @c
+рваные крылья | torn wings | @b
+разные крылья | mismatched wings | @a
+нарисованные крылья | drawn wings | @b
+шипастые крылья | spiked wings | @b
+сложенные крылья | folded wings | @a
+жидкие крылья | liquid wings | @c
+разнородные крылья | mixed wings | @a *
+голографические крылья | holographic wings | @c *
+плавящиеся крылья | melting wings | @c *
+переливчатые крылья | iridescent wings | @c *
+звёздные крылья | starry wings | @c *
+крылья божьей коровки | ladybug wings | @b
+кружевные крылья | lace wings | @b
+цветочные крылья (узор) | floral wings | @c
+блестящие крылья | glitter wings | @c
+космические крылья | galaxy wings | @c
+окровавленные крылья | bloody wings | @b
+крылья-паутина | spider web wings | @b
+глитч-крылья | glitch wings | @c
+крылья светлого ястреба | light hawk wings | @b
+крылья на запястьях | wrist wings | @d
+крылья-руки | hand wings | @d
+крылья на ушах | ear wings | @d *
+крылатая шляпа | winged hat | @e
+крылатый шлем | winged helmet | @e
+крылатая обувь | winged footwear | @e
+крылатая сумка | winged bag | @e
+попугай: крылья | parrot wings | @b
+ворона: крылья | crow wings | @b
+чайка: крылья | seagull wings | @b
+воробей: крылья | sparrow wings | @b
+петух: крылья | rooster wings | @b
+курочка: крылья | chicken wings | @b
+белая сова: крылья | snowy owl wings | @b
+филин: крылья | eagle owl wings | @b
+сова-сипуха: крылья | barn owl wings | @b
+роющая сова: крылья | burrowing owl wings | @b
+кукушка: крылья | cuckoo wings | @b
+уточка: крылья | duck wings | @b
+орёл: крылья | eagle wings | @b
+сокол: крылья | falcon wings | @b
+тукан: крылья | toucan wings | @b
+голубь: крылья | pigeon wings | @b
+фламинго: крылья | flamingo wings | @b
+журавль: крылья | crane wings | @b
+гусь: крылья | goose wings | @b
+ястреб: крылья | hawk wings | @b
+колибри: крылья | hummingbird wings | @b
+ласточка: крылья | swallow wings | @b
+сорока: крылья | magpie wings | @b
+страус: крылья | ostrich wings | @b
+пеликан: крылья | pelican wings | @b
+лебедь: крылья | swan wings | @b
+бабочка-монарх: крылья | monarch butterfly wings | @b
+бабочка-парусник: крылья | swallowtail butterfly wings | @b
+комар: крылья | mosquito wings | @b
+цикада: крылья | cicada wings | @b
+светлячок: крылья | firefly wings | @b
+кузнечик: крылья | grasshopper wings | @b
+китайский дракон: крылья | chinese dragon wings | @b
+пегас: крылья | pegasus wings | @b
+грифон: крылья | griffin wings | @b
+гиппогриф: крылья | hippogriff wings | @b
+
+-- antennae | Усики | один
+усики | antennae
+усики мотылька | moth antennae
+накладные усики | fake antennae
+перистые усики | feathery antennae | *
+муравей: усики | ant antennae
+пчёлка: усики | bee antennae
+жук: усики | beetle antennae
+гусеница: усики | caterpillar antennae
+шмель: усики | bumblebee antennae
+жук-носорог: усики | rhinoceros beetle antennae
+жук-олень: усики | stag beetle antennae
+бабочка: усики | butterfly antennae
+бабочка-монарх: усики | monarch butterfly antennae
+бабочка-парусник: усики | swallowtail butterfly antennae
+стрекоза: усики | dragonfly antennae
+улитка: усики | snail antennae
+таракан: усики | cockroach antennae
+червяк: усики | worm antennae
+комар: усики | mosquito antennae
+сороконожка: усики | centipede antennae
+цикада: усики | cicada antennae
+светлячок: усики | firefly antennae
+кузнечик: усики | grasshopper antennae
+креветочка: усики | shrimp antennae
+лобстер: усики | lobster antennae
+рак: усики | crayfish antennae
+рак-отшельник: усики | hermit crab antennae
+изопод: усики | isopod antennae
+
+-- tails | Хвосты | мульти
+~ a=Общее; b=Звериные; c=Птицы и рептилии; d=Фэнтези; e=Форма; f=Размер; g=Действия; h=Беспозвоночные; i=Франшизы; j=Украшения
+хвост | tail | @a
+накладной хвост | fake tail | @a
+цепкий хвост | prehensile tail | @e
+украшение на хвосте | tail ornament | @j
+несколько хвостов | multiple tails | @a
+кошачий хвост | cat tail | @b
+собачий хвост | dog tail | @b
+лисий хвост | fox tail | @b
+волчий хвост | wolf tail | @b
+кроличий хвостик | rabbit tail | @b
+лошадиный хвост | horse tail | @b
+коровий хвост | cow tail | @b
+тигриный хвост | tiger tail | @b
+львиный хвост | lion tail | @b
+леопардовый хвост | leopard tail | @b
+хвост ягуара | jaguar tail | @b
+хвост пантеры | panther tail | @b
+хвост снежного барса | snow leopard tail | @b
+медвежий хвостик | bear tail | @b
+олений хвостик | deer tail | @b
+козий хвостик | goat tail | @b
+овечий хвостик | sheep tail | @b
+свиной хвостик | pig tail | @b
+обезьяний хвост | monkey tail | @b
+мышиный хвост | mouse tail | @b
+беличий хвост | squirrel tail | @b
+енотовый хвост | raccoon tail | @b
+хвост ласки | weasel tail | @b
+хвост выдры | otter tail | @b
+бобровый хвост | beaver tail | @b
+хвост альпаки | alpaca tail | @b
+жирафий хвост | giraffe tail | @b
+лосиный хвостик | moose tail | @b
+хвост тапира | tapir tail | @b
+птичий хвост | bird tail | @c
+совиный хвост | owl tail | @c *
+пингвиний хвостик | penguin tail | @c
+хвост ящерицы | lizard tail | @c
+крокодилий хвост | crocodilian tail | @c
+хвост динозавра | dinosaur tail | @c
+хвост хамелеона | chameleon tail | @c
+змеиный хвост | snake tail | @c
+хвост-голова змеи | snake head tail | @d
+рыбий хвост | fish tail | @c
+хвост головастика | tadpole tail | @c
+драконий хвост | dragon tail | @d
+демонический хвост | demon tail | @d
+хвост скорпиона | scorpion tail | @h
+скелетный хвост | skeletal tail | @d
+кристальный хвост | crystal tail | @d
+механический хвост | mechanical tail | @d
+хвост-штекер | electric plug tail | @d
+огненный хвост | fiery tail | @d
+хвост с огоньком | flame-tipped tail | @d
+хвост-сердечко | heart tail | @e
+раздвоенный хвост | forked tail | @e
+шипастый хвост | spiked tail | @e
+полосатый хвост | striped tail | @e
+короткий хвост | short tail | @f
+большой хвост | large tail | @f
+очень длинный хвост | very long tail | @f
+абсурдно длинный хвост | absurdly long tail | @f
+виляет хвостом | tail wagging | @g
+обвивает хвостом | tail wrap | @g
+хвост поджат | tail between legs | @g
+хвост сквозь одежду | tail through clothes | @g
+хвост поднят | tail raised | @g
+держит свой хвост | holding own tail | @g
+держит чужой хвост | holding another's tail | @g
+обнимает хвост | hugging tail | @g
+кусает свой хвост | biting own tail | @g
+акулий хвост | shark tail | @c
+китовый хвост | cetacean tail | @c
+хвост гиены | hyena tail | @b
+хвост красной панды | red panda tail | @b
+шакалий хвост | jackal tail | @b
+хвост бурундука | chipmunk tail | @b
+хвост хорька | ferret tail | @b
+хвост панды | panda tail | @b
+хвост скунса | skunk tail | @b
+хвост муравьеда | anteater tail | @b
+хвост летучей мыши | bat tail | @b
+хвост тасманского дьявола | tasmanian devil tail | @b
+хвост суриката | meerkat tail | @b
+хвост зебры | zebra tail | @b
+слоновий хвост | elephant tail | @b
+хвост тамандуа | tamandua tail | @b
+хвост шиншиллы | chinchilla tail | @b
+хвост тушканчика | jerboa tail | @b
+хвост лемура | lemur tail | @b
+хвост газели | gazelle tail | @b
+хвост опоссума | possum tail | @b
+хвост окапи | okapi tail | @b
+хвост броненосца | armadillo tail | @b
+барсучий хвост | badger tail | @b
+ослиный хвост | donkey tail | @b *
+хвост панголина | pangolin tail | @b *
+кабаний хвостик | boar tail | @b *
+хвост сурка | marmot tail | @b *
+носорожий хвост | rhinoceros tail | @b *
+верблюжий хвост | camel tail | @b *
+хомячий хвостик | hamster tail | @b *
+хвост кенгуру | kangaroo tail | @b *
+хвост аксолотля | axolotl tail | @c *
+хвост угря | eel tail | @c *
+брюшко насекомого | abdomen tail | @h
+хвост членистоногого | arthropod tail | @h
+креветочный хвост | shrimp tail | @h *
+хвост омара | lobster tail | @h *
+хвост слизня | slug tail | @h *
+хвост многоножки | centipede tail | @h *
+призрачный хвост | ghost tail | @d
+хвост восточного дракона | eastern dragon tail | @d
+хвост-кабель | cable tail | @d
+хвост-щупальце | tentacle tail | @d
+хвост-фитиль | fuse tail | @d
+светящийся хвост | glowing tail | @d
+энергетический хвост | energy tail | @d
+костяной хвост | bone tail | @d *
+хвост-USB | usb tail | @d *
+хвост-лист | leaf tail | @d *
+жидкий хвост | liquid tail | @d *
+крылатый хвост | winged tail | @d *
+растительный хвост | plant tail | @d *
+пушистый хвост | fluffy tail | @e
+острый хвост | sharp tail | @e
+с пушистым кончиком | fur-tipped tail | @e
+жёсткий хвост | stiff tail | @e
+закрученный хвост | curled tail | @e
+сегментированный хвост | segmented tail | @e
+толстый хвост | thick tail | @f
+пятнистый хвост | spotted tail | @e
+частично оперённый | partially feathered tail | @e
+длинный хвост | long tail | @f
+покемоний хвост | pokemon tail | @i
+хвост пикачу | pikachu tail | @i
+хвост иви | eevee tail | @i
+хвост пикачу (самка) | pikachu tail (female) | @i *
+хвост слоупока | slowpoke tail | @i *
+бант на хвосте | tail bow | @j
+лента на хвосте | tail ribbon | @j
+бубенчик на хвосте | tail bell | @j
+кольцо на хвосте | tail ring | @j
+хвост горностая | ermine tail | @b
+рысь: хвост | lynx tail | @b
+гепард: хвост | cheetah tail | @b
+американская кошка: хвост | american curl cat tail | @b
+бомбейская кошка: хвост | bombay cat tail | @b
+мейн-кун: хвост | maine coon cat tail | @b
+сомалийская кошка: хвост | somali cat tail | @b
+чёрная пантера: хвост | black panther tail | @b
+сервал: хвост | serval tail | @b
+полосатая кошка: хвост | striped cat tail | @b
+пушистая кошка: хвост | fluffy cat tail | @b
+пума: хвост | puma tail | @b
+леопон: хвост | leopon tail | @b
+трёхцветная кошка: хвост | calico cat tail | @b
+чёрно-белая кошка: хвост | tuxedo cat tail | @b
+табби: хвост | tabby cat tail | @b
+сфинкс: хвост | sphynx cat tail | @b
+бульдог: хвост | bulldog tail | @b
+гиеновидная собака: хвост | african wild dog tail | @b
+койот: хвост | coyote tail | @b
+афганская борзая: хвост | afghan hound tail | @b
+акита-ину: хвост | akita inu tail | @b
+австралийский келпи: хвост | australian kelpie tail | @b
+бассет-хаунд: хвост | basset hound tail | @b
+бигль: хвост | beagle tail | @b
+бернский зенненхунд: хвост | bernese mountain dog tail | @b
+бордер-колли: хвост | border collie tail | @b
+борзая: хвост | borzoi tail | @b
+бостон-терьер: хвост | boston terrier tail | @b
+терьер: хвост | terrier tail | @b
+колли: хвост | collie tail | @b
+австралийская овчарка: хвост | australian shepherd tail | @b
+шелти: хвост | shetland sheepdog tail | @b
+спаниель: хвост | spaniel tail | @b
+аляскинский маламут: хвост | alaskan malamute tail | @b
+пули: хвост | puli tail | @b
+такса: хвост | dachshund tail | @b
+чихуахуа: хвост | chihuahua tail | @b
+китайская хохлатая собака: хвост | chinese crested dog tail | @b
+чау-чау: хвост | chow chow tail | @b
+доберман: хвост | dobermann tail | @b
+английский спрингер-спаниель: хвост | english springer spaniel tail | @b
+грейхаунд: хвост | greyhound tail | @b
+золотистый ретривер: хвост | golden retriever tail | @b
+немецкий дог: хвост | great dane tail | @b
+ирландский сеттер: хвост | irish setter tail | @b
+бобтейл: хвост | old english sheepdog tail | @b
+померанский шпиц: хвост | pomeranian tail | @b
+пудель: хвост | poodle tail | @b
+мопс: хвост | pug tail | @b
+шнауцер: хвост | schnauzer tail | @b
+сиба-ину: хвост | shiba inu tail | @b
+сенбернар: хвост | st bernard tail | @b
+вельш-корги: хвост | welsh corgi tail | @b
+йоркширский терьер: хвост | yorkshire terrier tail | @b
+попугай: хвост | parrot tail | @c
+попугай-корелла: хвост | cockatiel tail | @c
+ворона: хвост | crow tail | @c
+чайка: хвост | seagull tail | @c
+воробей: хвост | sparrow tail | @c
+петух: хвост | rooster tail | @c
+курочка: хвост | chicken tail | @c
+белая сова: хвост | snowy owl tail | @c
+филин: хвост | eagle owl tail | @c
+сова-сипуха: хвост | barn owl tail | @c
+роющая сова: хвост | burrowing owl tail | @c
+кукушка: хвост | cuckoo tail | @c
+уточка: хвост | duck tail | @c
+сокол: хвост | falcon tail | @c
+тукан: хвост | toucan tail | @c
+голубь: хвост | pigeon tail | @c
+фламинго: хвост | flamingo tail | @c
+муравей: хвост | ant abdomen tail | @h
+пчёлка: хвост | bee abdomen tail | @h
+жук: хвост | beetle abdomen tail | @h
+гусеница: хвост | caterpillar tail | @h
+шмель: хвост | bumblebee abdomen tail | @h
+жук-носорог: хвост | rhinoceros beetle abdomen tail | @h
+жук-олень: хвост | stag beetle abdomen tail | @h
+паук: хвост | spider abdomen tail | @h
+таракан: хвост | cockroach abdomen tail | @h
+червяк: хвост | worm tail | @h
+мотылёк: хвост | moth abdomen tail | @h
+комар: хвост | mosquito abdomen tail | @h
+сороконожка: хвост | centipede abdomen tail | @h
+цикада: хвост | cicada abdomen tail | @h
+светлячок: хвост | firefly abdomen tail | @h
+кузнечик: хвост | grasshopper abdomen tail | @h
+крыса: хвост | rat tail | @b
+трубкозуб: хвост | aardvark tail | @b
+коати: хвост | coati tail | @b
+квокка: хвост | quokka tail | @b
+ёжик: хвост | hedgehog tail | @b
+мангуст: хвост | mongoose tail | @b
+опоссум: хвост | opossum tail | @b
+фенек: хвост | fennec tail | @b
+дикобраз: хвост | porcupine tail | @b
+капибара: хвост | capybara tail | @b
+песец: хвост | arctic fox tail | @b
+горилла: хвост | gorilla tail | @b
+антилопа: хвост | antelope tail | @b
+бизон: хвост | bison tail | @b
+бык: хвост | bull tail | @b
+пони: хвост | pony tail | @b
+белый медведь: хвост | polar bear tail | @b
+коала: хвост | koala tail | @b
+бегемот: хвост | hippopotamus tail | @b
+крокодил: хвост | crocodile tail | @c
+кит: хвост | whale tail | @c
+креветочка: хвост | shrimp abdomen tail | @h
+изопод: хвост | isopod abdomen tail | @h
+осьминог: хвост | octopus tails | @h
+медуза: хвост | jellyfish tail | @h
+морской котик: хвост | seal tail | @c
+дельфин: хвост | dolphin tail | @c
+черепашка: хвост | turtle tail | @c
+нарвал: хвост | narwhal tail | @c
+карп: хвост | carp tail | @c
+сом: хвост | catfish tail | @c
+пиявка: хвост | leech tail | @h
+утконос: хвост | platypus tail | @b
+скат: хвост | stingray tail | @c
+кобра: хвост | cobra tail | @c
+василиск: хвост | basilisk tail | @d
+китайский дракон: хвост | chinese dragon tail | @d
+геккон: хвост | gecko tail | @c
+игуана: хвост | iguana tail | @c
+кицунэ: хвост | kitsune tails | @d
+единорог: хвост | unicorn tail | @d
+пегас: хвост | pegasus tail | @d
+цилинь: хвост | qilin tail | @d
+грифон: хвост | griffin tail | @d
+гиппогриф: хвост | hippogriff tail | @d
+
+-- fantasy_parts | Фэнтези-части | мульти
+щупальца | tentacles
+дополнительные руки | extra arms
+кукольные суставы | doll joints
+робо-суставы | robot joints
+
+
+== pose | Поза и жесты | POSE & GESTURE
+
+-- pose | Поза | один
+~ a=Стоя; b=Сидя; c=Лёжа; d=Динамика
+стоя | standing | @a
+на одной ноге | standing on one leg | @a
+контрапост | contrapposto | @a
+наклон вперёд | leaning forward | @a
+отклонение назад | leaning back | @a
+наклон вбок | leaning to the side | @a
+у стены | against wall | @a
+на цыпочках | tiptoes | @a
+идёт | walking | @d
+бежит | running | @d
+вышагивает | strut | @d
+сидя | sitting | @b
+сэйдза | seiza | @b
+варидза | wariza | @b
+ёкодзувари | yokozuwari | @b
+по-турецки | indian style | @b
+нога на ногу | crossed legs | @b
+колени подняты | knees up | @b
+обнимает колени | hugging own legs | @b
+нога четвёркой | figure four sitting | @b
+сидит на полу | sitting on floor | @b
+на корточках | squatting | @b
+на коленях | kneeling | @b
+носки внутрь | pigeon-toed | @a
+ноги вверх | legs up | @c
+лёжа | lying | @c
+на спине | on back | @c
+на животе | on stomach | @c
+на боку | on side | @c
+полулёжа | reclining | @c
+поза эмбриона | fetal position | @c
+лицом вниз | face down | @c
+ничком | prone | @c
+нагнувшись | bent over | @a
+прогиб в спине | arched back | @a
+на четвереньках | all fours | @c
+ползёт | crawling | @d
+прыжок | jumping | @d
+падает | falling | @d
+парит | floating | @d
+летит | flying | @d
+ныряет | dive | @d
+балансирует | balancing | @d
+экшн-поза | action pose | @d
+боевая стойка | fighting stance | @d
+динамичная поза | dynamic pose | @d
+ноги врозь | legs apart | @a
+сутулится | slouching | @a
+на одном колене | on one knee | @b
+бабочка (сидя) | butterfly sitting | @b
+лотос | lotus position | @b
+колени к груди | knees to chest | @b
+в воздухе | midair | @d
+подпрыгивает | hopping | @d
+стойка на руках | handstand | @d
+стойка на голове | headstand | @d
+съёжился | cowering | @b
+шпагат | split | @d
+вверх ногами | upside-down | @d
+
+-- arms_torso | Руки и корпус | мульти
+руки вверх | arms up
+руки за спиной | arms behind back
+руки за головой | arms behind head
+рука за спиной | arm behind back
+рука вверх | arm up
+скрещенные руки | crossed arms
+руки вытянуты | outstretched arms
+рука вытянута | outstretched arm
+рука на бедре | hand on own hip
+руки в боки | hands on own hips
+рука на груди | hand on own chest
+рука у щеки | hand on own cheek
+рука у лица | hand on own face
+рука в волосах | hand in own hair
+рука на голове | hand on own head
+руки в карманах | hands in pockets
+руки сцеплены | hands clasped
+ладони вместе | own hands together
+потягивается | stretching
+разворот корпуса | twisted torso
+руки раскинуты | spread arms
+руки по швам | arms at sides
+руки-самолёт | airplane arms
+рука вдоль тела | arm at side
+напрягает мышцы | flexing
+пожимает плечами | shrugging
+опирается на руку | arm support
+пальцы сцеплены | interlocked fingers
+
+-- head_pose | Голова (поза) | мульти
+наклон головы | head tilt
+голова опущена | head down
+голова запрокинута | head back
+гладят по голове | headpat
+подпёр голову | head rest
+
+-- pose_misc | Поза: прочее | мульти
+позирует | posing
+модельная поза | model pose
+ноги подняты | feet up
+скрещенные лодыжки | crossed ankles
+W-руки | w arms
+поза зомби | zombie pose
+T-поза | t-pose
+A-поза | a-pose
+V-руки | v arms
+поза победы | victory pose
+поза привидения | ghost pose
+нога поднята | leg up
+колено поднято | knee up
+подъём ноги | leg lift
+нога вытянута | outstretched leg
+
+-- gestures | Жесты рук | мульти
+~ a=Знаки; b=Милота; c=Кисть; d=У лица; e=Между людьми
+машет рукой | waving | @a
+виктори | v | @a
+двойное V | double v | @a
+V у глаза | v over eye | @a
+палец вверх | thumbs up | @a
+салют | salute | @a
+знак ОК | ok sign | @a
+тсс | shushing | @d
+манит | beckoning | @a
+указывает | pointing | @c
+указывает на зрителя | pointing at viewer | @c
+указывает вверх | pointing up | @c
+средний палец | middle finger | @a
+сердце руками | heart hands | @b
+сердце на двоих | heart hands duo | @e
+сердечко пальцами | finger heart | @b
+коготки | claw pose | @b
+лапки | paw pose | @b
+кошачья поза | cat pose | @b
+жест котёнка | kitten gesture | @b
+сжатая кисть | clenched hand | @c
+сжатые кисти | clenched hands | @c
+кулак | fist | @c
+открытая ладонь | open hand | @c
+растопыренные пальцы | spread fingers | @c
+протянутая рука | outstretched hand | @c
+тянется | reaching | @c
+тянется к зрителю | reaching towards viewer | @c
+пальцы-пистолет | finger gun | @a
+знак W | w | @a
+коза | horns pose | @a
+кавычки пальцами | air quotes | @a
+палец у губ | finger to mouth | @d
+палец у щеки | finger to cheek | @d
+рука у подбородка | hand on own chin | @d
+рука у рта | hand to own mouth | @d
+прикрывает рот | covering own mouth | @d
+пальцы вместе | fingers together | @c
+кулак в ладонь | palm-fist tap | @c
+скрещенные пальцы | crossed fingers | @a
+палец вниз | thumbs down | @a
+держатся за руки | holding hands | @e
+дай пять | high five | @e
+рукопожатие | handshake | @e
+рука на чужом плече | hand on another's shoulder | @e
+рука на чужой голове | hand on another's head | @e
+
+
+== franchise | Франшизы | FRANCHISE
+
+-- franchise_traits | Признак франшизы | мульти
+~ a=Наруто; b=Dragon Ball; c=Прочее
+шаринган | sharingan | @a
+бьякуган | byakugan | @a
+риннеган | rinnegan | @a
+мангекё шаринган | mangekyou sharingan | @a
+риннэ шаринган | rinne sharingan | @a *
+супер-саян | super saiyan | @b
+супер-саян 4 | super saiyan 4 | @b
+саян | saiyan | @b
+супер-саян блю | super saiyan blue | @b
+супер-саян 2 | super saiyan 2 | @b
+супер-саян 3 | super saiyan 3 | @b
+легендарный супер-саян | legendary super saiyan | @b
+супер-саян розе | super saiyan rose | @b
+супер-саян бог | super saiyan god | @b
+командное заклинание (Fate) | command spell | @c
+поза JoJo | jojo pose | @c
+метка Архонта (Genshin) | archon mark | @c
+гиасс | geass | @c

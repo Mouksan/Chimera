@@ -2579,3 +2579,12 @@ button.chm-row-name:hover {
         will-change: auto;
     }
 }
+
+/* Поля поиска: отступ текста от лупы. Повышенная точность селектора — тема таверны
+   красит input[type=search] своей подложкой, и без отступа текст прилипает к краю. */
+.chm-window .chm-search input.chm-search-input,
+.chm-window .chm-search input.chm-chars-q,
+.chm-window .chm-catbox-search input.chm-catbox-q {
+    padding: 0 8px;
+    border-radius: 999px;
+}

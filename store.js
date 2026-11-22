@@ -70,8 +70,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
     previews: [],            // { id, path, prompt, negative, styleName, size, provider, model, seed, createdAt }
     currentPreviewId: null,  // какая картинка показана в панели
 
-    // Этап 6: сохранённые персонажи
+    // Этап 6: сохранённые персонажи — { id, name, build, autoOff, coverId, createdAt, updatedAt }
     characters: [],
+    loadedCharId: null,      // какой персонаж сейчас загружен (null — никакой)
 });
 
 export function ctx() {

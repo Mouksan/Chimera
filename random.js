@@ -21,7 +21,7 @@ export function setHistoryListener(fn) {
 
 function snapshot() {
     const s = getSettings();
-    return { build: structuredClone(s.build), autoOff: [...s.autoOff] };
+    return { build: structuredClone(s.build), autoOff: [...s.autoOff], loadedCharId: s.loadedCharId ?? null };
 }
 
 export function pushHistory() {
@@ -40,6 +40,8 @@ export function undo() {
     const s = getSettings();
     s.build = snap.build;
     s.autoOff = snap.autoOff;
+    // Откат загрузки персонажа возвращает и того, кто был загружен (если он ещё существует)
+    if (snap.loadedCharId === null || s.characters.some((c) => c.id === snap.loadedCharId)) s.loadedCharId = snap.loadedCharId;
     saveSettings();
     onHistory();
     return true;

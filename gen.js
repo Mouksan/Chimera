@@ -439,6 +439,7 @@ export async function generatePreview(built, hooks = {}) {
             model: provider === 'novelai' ? model : NAISTERA_MODEL,
             route,
             seed: provider === 'novelai' ? seed : null,
+            charId: s.loadedCharId || null,   // чей это превью (для обложки и фильтра галереи)
             createdAt: Date.now(),
         };
         s.previews.unshift(entry);

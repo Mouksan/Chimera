@@ -9,11 +9,13 @@ import {
 import { setLauncherBusy } from './launcher.js';
 import { toast } from './notice.js';
 import { renderPanel } from './panel.js';
+import { loadedChar, setCover } from './characters.js';
 
 let root = null;
 let getBuilt = () => null;
 let retrying = false;
 let galleryOpen = false;
+let onlyChar = false;        // фильтр галереи «только этого персонажа»
 
 function windowOpen() {
     return Boolean(document.querySelector('#chm-overlay.chm-open'));
@@ -47,19 +49,35 @@ function currentHtml() {
                 <button type="button" class="chm-btn" data-dl="png"><i class="fa-solid fa-download"></i> PNG</button>
                 <button type="button" class="chm-btn" data-dl="webp"><i class="fa-solid fa-download"></i> WEBP</button>
                 <button type="button" class="chm-btn chm-shot-copy" title="Скопировать промт, по которому нарисовано (со стилем)"><i class="fa-regular fa-copy"></i> Промт</button>
+                ${coverBtn(p)}
                 <button type="button" class="chm-btn chm-shot-del" title="Удалить превью и файл"><i class="fa-solid fa-trash"></i></button>
             </div>
         </div>`;
 }
 
+function coverBtn(p) {
+    const c = loadedChar();
+    if (!c) return '';
+    const isCover = c.coverId === p.id;
+    return `<button type="button" class="chm-btn chm-shot-cover${isCover ? ' chm-active' : ''}" title="Обложка для «${escapeHtml(c.name)}» в «Моих персонажах»"><i class="fa-solid fa-image-portrait"></i> ${isCover ? 'Обложка' : 'Сделать обложкой'}</button>`;
+}
+
 function galleryHtml() {
     const s = getSettings();
     if (!s.previews.length) return '';
+    const c = loadedChar();
+    const filtered = c && onlyChar;
+    const list = filtered ? s.previews.filter((p) => p.charId === c.id) : s.previews;
+    const chip = c
+        ? `<div class="chm-gallery-filter"><button type="button" class="chm-chip chm-only-char${filtered ? ' chm-active' : ''}">только «${escapeHtml(c.name)}»</button></div>`
+        : '';
     return `
         <details class="chm-fold chm-gallery"${galleryOpen ? ' open' : ''}>
             <summary class="chm-mono-label">мои превью · ${s.previews.length}</summary>
+            ${chip}
+            ${list.length ? '' : '<div class="chm-prompt-empty">// с этим персонажем ещё ничего не рисовали</div>'}
             <div class="chm-thumbs">
-                ${s.previews.map((p) => `<button type="button" class="chm-thumb${p.id === s.currentPreviewId ? ' chm-active' : ''}" data-id="${escapeHtml(p.id)}" title="${escapeHtml(new Date(p.createdAt).toLocaleString())}"><img src="${escapeHtml(p.path)}" alt="" loading="lazy"></button>`).join('')}
+                ${list.map((p) => `<button type="button" class="chm-thumb${p.id === s.currentPreviewId ? ' chm-active' : ''}" data-id="${escapeHtml(p.id)}" title="${escapeHtml(new Date(p.createdAt).toLocaleString())}"><img src="${escapeHtml(p.path)}" alt="" loading="lazy"></button>`).join('')}
             </div>
         </details>`;
 }
@@ -186,6 +204,11 @@ async function onClick(e) {
         root.querySelectorAll('[data-size]').forEach((b) => b.classList.toggle('chm-active', b === size));
         return;
     }
+    if (e.target.closest('.chm-only-char')) {
+        onlyChar = !onlyChar;
+        renderPreview();
+        return;
+    }
     const thumb = e.target.closest('.chm-thumb');
     if (thumb) {
         s.currentPreviewId = thumb.dataset.id;
@@ -207,6 +230,13 @@ async function onClick(e) {
             await downloadPreview(p, dl.dataset.dl);
         } catch (error) {
             toast(`Не скачалось: ${error?.message || error}`, 5000);
+        }
+        return;
+    }
+    if (e.target.closest('.chm-shot-cover')) {
+        if (setCover(p.id)) {
+            renderPreview();
+            toast(`Обложка «${loadedChar()?.name}» обновлена`);
         }
         return;
     }

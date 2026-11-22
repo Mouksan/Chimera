@@ -4,6 +4,7 @@
 import { getSettings, saveSettings, escapeHtml, TOAST_TITLE } from './store.js';
 import { findConflicts } from './conflicts.js';
 import { activeStyle } from './gen.js';
+import { headButtonsHtml, renderCharBar } from './characters.js';
 import {
     buildPrompt, formatWeight, isPart, isShadeable, isMulti, MULTI_MAX,
     PART_COLORS, SHADES, colorLabel, colorCss,
@@ -48,7 +49,9 @@ function shellHtml() {
         <div class="chm-panel-head">
             <span class="chm-panel-title">Собранный персонаж</span>
             <span class="chm-panel-count">0 тег.</span>
+            ${headButtonsHtml()}
         </div>
+        <div class="chm-char-bar" hidden></div>
 
         <div class="chm-card chm-prompt-card">
             <div class="chm-mono-label">prompt.txt</div>
@@ -206,6 +209,7 @@ export function renderPanel() {
 
     root.querySelector('.chm-panel-count').textContent = `${last.count} тег.`;
     root.querySelector('.chm-prompt-text').innerHTML = promptHtml(last);
+    renderCharBar();
 
     const pairs = findConflicts(s.build.map((b) => b.id));
     conflicted = new Set(pairs.flat());

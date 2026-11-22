@@ -1709,7 +1709,20 @@ button.chm-row-name:hover {
     }
 
     .chm-presets {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+
+    .chm-cc-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 8px;
+    }
+
+    .chm-modal-wrap {
+        padding: 8px;
+    }
+
+    .chm-modal {
+        padding: 12px;
     }
 
     .chm-rules-grid {
@@ -2007,11 +2020,256 @@ button.chm-row-name:hover {
     gap: 8px;
 }
 
-.chm-btn-accent {
+.chm-btn.chm-btn-accent {
     color: var(--SmartThemeBlurTintColor, #111);
     font-weight: 700;
     background: var(--chm-accent);
     border-color: var(--chm-accent);
+}
+
+/* ---------- Этап 6: «Мои персонажи» ---------- */
+
+.chm-panel-head {
+    align-items: center;
+}
+
+.chm-panel-count {
+    margin-right: auto;
+}
+
+.chm-panel-title {
+    margin-right: 8px;
+}
+
+.chm-head-btns {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
+}
+
+.chm-head-btns .chm-icon-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--chm-line);
+}
+
+.chm-head-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    color: inherit;
+    font: inherit;
+    font-size: 0.9em;
+    background: transparent;
+    border: 1px solid var(--chm-line);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.chm-head-pill:hover {
+    background: rgba(127, 127, 127, 0.14);
+}
+
+.chm-char-count:empty {
+    display: none;
+}
+
+.chm-char-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chm-char-bar[hidden] {
+    display: none;
+}
+
+.chm-char-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 6px 6px 6px 12px;
+    background: color-mix(in srgb, var(--chm-accent) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chm-accent) 40%, transparent);
+    border-radius: 10px;
+}
+
+.chm-char-label {
+    font-size: 0.85em;
+    opacity: 0.65;
+}
+
+.chm-char-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chm-dirty {
+    color: var(--chm-warn);
+    font-size: 0.9em;
+}
+
+.chm-char-unload {
+    width: 26px;
+    height: 26px;
+    margin-left: auto;
+}
+
+.chm-save-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.chm-save-name {
+    flex: 1;
+    min-width: 140px;
+    margin: 0;
+}
+
+/* Окошко со списком */
+
+.chm-modal.chm-modal-wide {
+    width: min(980px, 100%);
+}
+
+.chm-chars-search {
+    flex: none;
+}
+
+.chm-chars-q {
+    flex: 1;
+    min-width: 0;
+    height: 34px;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    background: transparent;
+    border: none;
+    outline: none;
+    box-shadow: none;
+}
+
+.chm-chars-list {
+    min-height: 80px;
+    overflow-y: auto;
+}
+
+.chm-cc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px;
+}
+
+.chm-cc {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--chm-soft);
+    border: 1px solid var(--chm-line);
+    border-radius: 12px;
+}
+
+.chm-cc-loaded {
+    border-color: var(--chm-accent);
+}
+
+.chm-cc-cover {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 2 / 3;
+    max-height: 260px;
+    overflow: hidden;
+    font-size: 2.2em;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.chm-cc-cover i {
+    opacity: 0.25;
+}
+
+.chm-cc-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chm-cc-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px 10px;
+}
+
+.chm-cc-name {
+    overflow: hidden;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chm-cc-name input {
+    width: 100%;
+    margin: 0;
+}
+
+.chm-cc-meta {
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.72em;
+    opacity: 0.55;
+}
+
+.chm-cc-btns {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.chm-cc-load {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.82em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chm-cc-btns .chm-icon-btn {
+    width: 30px;
+    height: 30px;
+}
+
+.chm-gallery-filter {
+    margin-top: 8px;
+}
+
+.chm-shot-cover.chm-active {
+    color: var(--chm-accent);
+    border-color: var(--chm-accent);
+}
+
+@media (max-width: 900px) {
+    /* Узкая карточка: «Загрузить» во всю ширину, карандаш и корзина строкой выше */
+    .chm-cc-btns {
+        flex-wrap: wrap;
+    }
+
+    .chm-cc-load {
+        flex: 1 1 100%;
+        order: 2;
+    }
+
+    .chm-cc-btns .chm-icon-btn {
+        order: 1;
+    }
 }
 
 /* ---------- Экран настроек (поверх колонок) ---------- */

@@ -5,6 +5,7 @@
 // Этап 4а: баны, закрепы категорий, кубики, сброс и откат, бан-лист, конфликты
 // Этап 4б: режимы, «Рандом всего» / «Просто рандом», пресеты, «Рандом без…», умные правила, палитра
 // Этап 5: генерация превью (NovelAI / наистера), стили, галерея «Мои превью»
+// Этап 6: «Мои персонажи» — сохранить, загрузить, обложки
 
 import { getSettings, saveSettings, escapeHtml, TOAST_TITLE } from './store.js';
 import { addSettingsDrawer, settingsPaneHtml, bindSettingsPane, setStylesListener, closeSettingsModal } from './settings.js';
@@ -12,7 +13,8 @@ import { initLaunchers } from './launcher.js';
 import { loadTags } from './data.js';
 import { initCatalog, bindGlobalSearch, refreshAllSelection, renderCatalog, revealTag } from './catalog.js';
 import { initPanel, renderPanel, currentPrompt } from './panel.js';
-import { initPreview, refreshStyleSelect, isLightboxOpen, closeLightbox } from './preview.js';
+import { initPreview, refreshStyleSelect, isLightboxOpen, closeLightbox, renderPreview } from './preview.js';
+import { initCharacters } from './characters.js';
 import { currentGender, isIncompatible, triggeredGenerics } from './builder.js';
 import { loadConflicts } from './conflicts.js';
 import { banKeyValid } from './bans.js';
@@ -124,6 +126,10 @@ async function ensureCatalog() {
             onBan: (id) => banTagWithUndo(id),
         });
         initPreview(overlayEl.querySelector('.chm-gen'), currentPrompt);
+        initCharacters(overlayEl.querySelector('.chm-panel'), db, (opts) => {
+            onBuildChange(opts);
+            renderPreview();   // кнопка «Сделать обложкой» и фильтр галереи зависят от загруженного
+        });
         setStylesListener(() => {
             refreshStyleSelect();
             renderPanel();

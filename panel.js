@@ -88,7 +88,21 @@ function shellHtml() {
         <div class="chm-rows-head">
             <span class="chm-mono-label">теги</span>
         </div>
-        <div class="chm-rows"></div>`;
+        <div class="chm-rows"></div>
+        <div class="chm-own">
+            <div class="chm-own-view">
+                <span class="chm-own-label">свои теги</span>
+                <span class="chm-own-text"></span>
+                <button type="button" class="chm-row-btn chm-own-edit" title="Вписать или поправить свои теги"><i class="fa-solid fa-pen"></i></button>
+            </div>
+            <div class="chm-own-editor" hidden>
+                <textarea class="text_pole chm-own-input" rows="3" spellcheck="false" placeholder="xie yue, long loose blue-black hair, red eyes, ...">${escapeHtml(s.ownTags)}</textarea>
+                <div class="chm-fold-foot">
+                    <span class="chm-set-hint">Готовые теги через запятую, веса можно. Встают в конец персонажа и сохраняются вместе с ним.</span>
+                    <button type="button" class="chm-btn chm-own-done">Готово</button>
+                </div>
+            </div>
+        </div>`;
 }
 
 function customHint(place) {
@@ -97,12 +111,14 @@ function customHint(place) {
 }
 
 function promptHtml(result) {
-    if (!result.count && !result.head.length && !result.tail.length) {
+    if (!result.positive) {
         return '<span class="chm-prompt-empty">// пусто — выбери теги слева</span>';
     }
     const parts = [
         ...result.head.map((t) => `<span class="chm-ptag chm-ptag-custom">${escapeHtml(t)}</span>`),
-        ...result.rows.map((r) => `<span class="chm-ptag chm-ptag-${r.kind}">${escapeHtml(r.text)}</span>`),
+        ...result.rows.filter((r) => r.kind !== 'clothing').map((r) => `<span class="chm-ptag chm-ptag-${r.kind}">${escapeHtml(r.text)}</span>`),
+        ...result.own.map((t) => `<span class="chm-ptag chm-ptag-own">${escapeHtml(t)}</span>`),
+        ...result.rows.filter((r) => r.kind === 'clothing').map((r) => `<span class="chm-ptag chm-ptag-clothing">${escapeHtml(r.text)}</span>`),
         ...result.tail.map((t) => `<span class="chm-ptag chm-ptag-custom">${escapeHtml(t)}</span>`),
     ];
     return parts.join('<span class="chm-pcomma">, </span>');
@@ -147,9 +163,9 @@ function rowHtml(row) {
                 <div class="chm-row-top">
                     <span class="chm-row-name">${escapeHtml(row.ru)}</span>
                     <span class="chm-row-en">${escapeHtml(row.text)}</span>
-                    <span class="chm-badge" title="Добавлен сам вместе с видом части">само</span>
+                    <span class="chm-badge" title="${escapeHtml(row.hint || 'Добавлен сам вместе с видом части')}">само</span>
                     <span class="chm-row-tools">
-                        <button type="button" class="chm-row-btn chm-auto-off" title="Убрать общий тег"><i class="fa-solid fa-xmark"></i></button>
+                        <button type="button" class="chm-row-btn chm-auto-off" title="Убрать тег"><i class="fa-solid fa-xmark"></i></button>
                     </span>
                 </div>
             </div>`;
@@ -226,9 +242,33 @@ export function renderPanel() {
     note.textContent = lines.join('\n');
     note.hidden = !lines.length;
 
+    renderOwn();
+
     const rows = root.querySelector('.chm-rows');
     const html = last.rows.map(rowHtml).join('');
     rows.innerHTML = html || '<div class="chm-prompt-empty">// тут появятся выбранные теги с весами</div>';
+}
+
+/** Строка «свои теги»: текст и поле (поле не трогаем, пока в нём пишут). */
+function renderOwn() {
+    const s = getSettings();
+    const text = String(s.ownTags || '').trim();
+    const view = root.querySelector('.chm-own-text');
+    view.textContent = text || '— пусто';
+    view.classList.toggle('chm-own-empty', !text);
+    const input = root.querySelector('.chm-own-input');
+    if (document.activeElement !== input && input.value !== (s.ownTags || '')) input.value = s.ownTags || '';
+}
+
+function setOwnEditing(on) {
+    const own = root.querySelector('.chm-own');
+    own.querySelector('.chm-own-view').hidden = on;
+    own.querySelector('.chm-own-editor').hidden = !on;
+    if (on) {
+        const input = own.querySelector('.chm-own-input');
+        input.focus({ preventScroll: true });
+        input.setSelectionRange(input.value.length, input.value.length);
+    }
 }
 
 /** Обновить только текст промта (во время перетаскивания слайдера или набора текста). */
@@ -288,11 +328,22 @@ function onClick(e) {
         return;
     }
 
-    const seg = e.target.closest('.chm-seg-btn');
+    if (e.target.closest('.chm-own-edit')) {
+        setOwnEditing(true);
+        return;
+    }
+    if (e.target.closest('.chm-own-done')) {
+        setOwnEditing(false);
+        renderPanel();
+        return;
+    }
+
+    // Только переключатель custom.txt: у формата превью ниже свои .chm-seg-btn
+    const seg = e.target.closest('.chm-seg-btn[data-place]');
     if (seg) {
         s.custom.place = seg.dataset.place;
         saveSettings();
-        root.querySelectorAll('.chm-seg-btn').forEach((b) => b.classList.toggle('chm-active', b === seg));
+        root.querySelectorAll('.chm-seg-btn[data-place]').forEach((b) => b.classList.toggle('chm-active', b === seg));
         root.querySelector('.chm-custom-hint').textContent = customHint(s.custom.place);
         renderPromptOnly();
         return;
@@ -403,6 +454,14 @@ function onInput(e) {
         s.custom.text = e.target.value;
         saveSoon();
         renderPromptOnly();
+        return;
+    }
+    if (e.target.closest('.chm-own-input')) {
+        s.ownTags = e.target.value;
+        saveSoon();
+        renderPromptOnly();
+        renderOwn();
+        renderCharBar();   // ● несохранённые правки
     }
 }
 

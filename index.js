@@ -13,9 +13,9 @@ import { initLaunchers } from './launcher.js';
 import { loadTags } from './data.js';
 import { initCatalog, bindGlobalSearch, refreshAllSelection, renderCatalog, revealTag } from './catalog.js';
 import { initPanel, renderPanel, currentPrompt } from './panel.js';
-import { initPreview, refreshStyleSelect, isLightboxOpen, closeLightbox, renderPreview } from './preview.js';
+import { initPreview, refreshStyleSelect, isLightboxOpen, closeLightbox, renderPreview, showCharGallery } from './preview.js';
 import { initCharacters } from './characters.js';
-import { currentGender, isIncompatible, triggeredGenerics } from './builder.js';
+import { currentGender, isIncompatible, triggeredGenerics, GENDER_FROM_CHAR } from './builder.js';
 import { loadConflicts } from './conflicts.js';
 import { banKeyValid } from './bans.js';
 import { initBanList, openBanList, closeBanList, isBanListOpen } from './banlist.js';
@@ -129,6 +129,14 @@ async function ensureCatalog() {
         initCharacters(overlayEl.querySelector('.chm-panel'), db, (opts) => {
             onBuildChange(opts);
             renderPreview();   // кнопка «Сделать обложкой» и фильтр галереи зависят от загруженного
+        }, {
+            showGallery: (id) => {
+                // На телефоне галерея во вкладке «Персонаж»
+                getSettings().mobileTab = 'panel';
+                saveSettings();
+                renderMobileTabs();
+                showCharGallery(id);
+            },
         });
         setStylesListener(() => {
             refreshStyleSelect();
@@ -231,7 +239,8 @@ function onBuildChange(opts = {}) {
 
     // «Само», снятое руками, держится, пока в сборке есть его повод; повод ушёл — забываем
     const triggered = triggeredGenerics(tagDb, s.build);
-    const keep = s.autoOff.filter((en) => triggered.has(en));
+    const genderKeys = new Set(Object.values(GENDER_FROM_CHAR).map((g) => g.key));
+    const keep = s.autoOff.filter((en) => triggered.has(en) || genderKeys.has(en));
     if (keep.length !== s.autoOff.length) {
         s.autoOff = keep;
         saveSettings();

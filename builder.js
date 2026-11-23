@@ -175,6 +175,13 @@ function makeOrder(db) {
 let orderCache = null;
 let orderDb = null;
 
+// Пол персонажа «из текста» → тег в начало промта
+export const GENDER_FROM_CHAR = {
+    m: { key: '1boy', ru: 'мужской (из карточки)', en: '1boy' },
+    f: { key: '1girl', ru: 'женский (из карточки)', en: '1girl' },
+    x: { key: '1girl, futanari', ru: 'футанари (из карточки)', en: '1girl, futanari' },
+};
+
 /**
  * Собрать строки панели и промт.
  * @returns {{ rows: object[], positive: string, negative: string, gender: string|null, count: number }}
@@ -239,10 +246,24 @@ export function buildPrompt(db, s = getSettings()) {
         rows.push({ kind: 'tag', id: tag.id, tag, b, en: main, text, plain: [main, ...extra], weight: w, noWeight });
     }
 
+    // Пол из карточки персонажа, если в сборке нет тега пола (персонажи «из текста»)
+    if (!gender) {
+        const ch = s.loadedCharId ? (s.characters || []).find((c) => c.id === s.loadedCharId) : null;
+        const g = GENDER_FROM_CHAR[ch?.gender];
+        if (g && !autoOff.has(g.key)) {
+            rows.unshift({ kind: 'auto', key: g.key, ru: g.ru, text: g.en, plain: g.en.split(', '), hint: 'Пол из карточки персонажа — в сборке нет тега пола' });
+        }
+    }
+
+    // Свои готовые теги персонажа — в конец его блока (дубли каталожных не повторяем)
+    const already = new Set(rows.flatMap((r) => r.plain).map((x) => x.toLowerCase()));
+    const own = splitList(s.ownTags).filter((t) => !already.has(t.toLowerCase()));
+
     // Пустую сборку одеждой не украшаем
-    if (toggles.clothing && rows.length) {
+    if (toggles.clothing && (rows.length || own.length)) {
         for (const c of CLOTHING) {
-            if (!selectedEn.has(c)) rows.push({ kind: 'clothing', key: c, text: c, plain: [c] });
+            const lc = c.toLowerCase();
+            if (!selectedEn.has(c) && !own.some((x) => x.toLowerCase() === lc)) rows.push({ kind: 'clothing', key: c, text: c, plain: [c] });
         }
     }
 
@@ -260,11 +281,13 @@ export function buildPrompt(db, s = getSettings()) {
         head = splitList(custom.text);
     }
 
-    const body = rows.map((r) => r.text);
-    const positive = [...head, ...body, ...tail].join(', ');
+    // Порядок: теги каталога → свои теги → одежда (она общая, не про внешность)
+    const body = rows.filter((r) => r.kind !== 'clothing').map((r) => r.text);
+    const dress = rows.filter((r) => r.kind === 'clothing').map((r) => r.text);
+    const positive = [...head, ...body, ...own, ...dress, ...tail].join(', ');
 
     // Негатив: тег, выбранный в плюс, в негатив не уходит
-    const plus = new Set([...head, ...tail, ...rows.flatMap((r) => r.plain)].map((x) => x.toLowerCase()));
+    const plus = new Set([...head, ...tail, ...own, ...rows.flatMap((r) => r.plain)].map((x) => x.toLowerCase()));
     const negList = splitList(s.negative);
     const negKept = negList.filter((t) => !plus.has(t.toLowerCase()));
     const negative = negKept.join(', ');
@@ -272,6 +295,7 @@ export function buildPrompt(db, s = getSettings()) {
     return {
         rows,
         head,
+        own,
         tail,
         positive,
         negative,

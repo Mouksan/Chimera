@@ -439,7 +439,7 @@ export async function generatePreview(built, hooks = {}) {
             model: provider === 'novelai' ? model : NAISTERA_MODEL,
             route,
             seed: provider === 'novelai' ? seed : null,
-            charId: s.loadedCharId || null,   // чей это превью (для обложки и фильтра галереи)
+            charIds: s.loadedCharId ? [s.loadedCharId] : [],   // чьё это превью (обложка, галерея персонажа)
             createdAt: Date.now(),
         };
         s.previews.unshift(entry);
@@ -462,6 +462,7 @@ export async function deletePreview(id) {
     if (!entry) return false;
     const fileGone = await deleteImageFile(entry.path);
     s.previews = s.previews.filter((p) => p.id !== id);
+    for (const c of s.characters) if (c.coverId === id) c.coverId = null;
     if (s.currentPreviewId === id) s.currentPreviewId = s.previews[0]?.id || null;
     saveSettings();
     return fileGone;

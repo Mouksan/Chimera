@@ -15,7 +15,7 @@ let root = null;
 let getBuilt = () => null;
 let retrying = false;
 let galleryOpen = false;
-let onlyChar = false;        // фильтр галереи «только этого персонажа»
+let filterCharId = null;     // фильтр галереи: только картинки этого персонажа
 
 function windowOpen() {
     return Boolean(document.querySelector('#chm-overlay.chm-open'));
@@ -62,15 +62,23 @@ function coverBtn(p) {
     return `<button type="button" class="chm-btn chm-shot-cover${isCover ? ' chm-active' : ''}" title="Обложка для «${escapeHtml(c.name)}» в «Моих персонажах»"><i class="fa-solid fa-image-portrait"></i> ${isCover ? 'Обложка' : 'Сделать обложкой'}</button>`;
 }
 
+function charName(id) {
+    return getSettings().characters.find((c) => c.id === id)?.name || '';
+}
+
 function galleryHtml() {
     const s = getSettings();
     if (!s.previews.length) return '';
+    // Фильтр по персонажу, которого уже удалили, сам снимается
+    if (filterCharId && !charName(filterCharId)) filterCharId = null;
     const c = loadedChar();
-    const filtered = c && onlyChar;
-    const list = filtered ? s.previews.filter((p) => p.charId === c.id) : s.previews;
-    const chip = c
-        ? `<div class="chm-gallery-filter"><button type="button" class="chm-chip chm-only-char${filtered ? ' chm-active' : ''}">только «${escapeHtml(c.name)}»</button></div>`
-        : '';
+    const list = filterCharId ? s.previews.filter((p) => p.charIds?.includes(filterCharId)) : s.previews;
+    let chip = '';
+    if (filterCharId && filterCharId !== c?.id) {
+        chip = `<div class="chm-gallery-filter"><button type="button" class="chm-chip chm-only-char chm-active" title="Показать все превью">только «${escapeHtml(charName(filterCharId))}» <i class="fa-solid fa-xmark"></i></button></div>`;
+    } else if (c) {
+        chip = `<div class="chm-gallery-filter"><button type="button" class="chm-chip chm-only-char${filterCharId ? ' chm-active' : ''}">только «${escapeHtml(c.name)}»</button></div>`;
+    }
     return `
         <details class="chm-fold chm-gallery"${galleryOpen ? ' open' : ''}>
             <summary class="chm-mono-label">мои превью · ${s.previews.length}</summary>
@@ -80,6 +88,21 @@ function galleryHtml() {
                 ${list.map((p) => `<button type="button" class="chm-thumb${p.id === s.currentPreviewId ? ' chm-active' : ''}" data-id="${escapeHtml(p.id)}" title="${escapeHtml(new Date(p.createdAt).toLocaleString())}"><img src="${escapeHtml(p.path)}" alt="" loading="lazy"></button>`).join('')}
             </div>
         </details>`;
+}
+
+/** Открыть галерею с фильтром по персонажу (из «Моих персонажей»). */
+export function showCharGallery(id) {
+    filterCharId = id || null;
+    renderPreview();
+    const g = root?.querySelector('.chm-gallery');
+    if (g) g.open = true;
+    galleryOpen = true;
+    const scroller = root?.closest('.chm-panel');
+    if (!g || !scroller) return;
+    requestAnimationFrame(() => {
+        const delta = g.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 8;
+        scroller.scrollTop += delta;
+    });
 }
 
 function buttonHtml() {
@@ -133,15 +156,64 @@ export function closeLightbox() {
     document.querySelector('#chm-overlay .chm-lightbox')?.remove();
 }
 
-function openLightbox(path) {
+function bindListHtml(p) {
+    const chars = getSettings().characters;
+    if (!chars.length) return '<div class="chm-prompt-empty">// персонажей пока нет</div>';
+    return chars.map((c) => `
+        <label class="chm-bind-item">
+            <input type="checkbox" data-bind="${escapeHtml(c.id)}" ${p.charIds?.includes(c.id) ? 'checked' : ''}>
+            <span class="chm-bind-name">${escapeHtml(c.name)}</span>
+        </label>`).join('');
+}
+
+function openLightbox(p) {
     const win = document.querySelector('#chm-overlay .chm-window');
     if (!win) return;
     closeLightbox();
     const el = document.createElement('div');
     el.className = 'chm-lightbox';
-    el.innerHTML = `<img src="${escapeHtml(path)}" alt="превью"><button type="button" class="chm-icon-btn chm-lightbox-x" title="Закрыть"><i class="fa-solid fa-xmark"></i></button>`;
-    el.addEventListener('click', closeLightbox);
+    el.dataset.id = p.id;
+    el.innerHTML = `
+        <img src="${escapeHtml(p.path)}" alt="превью">
+        <button type="button" class="chm-icon-btn chm-lightbox-x" title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+        <div class="chm-lightbox-bar">
+            <button type="button" class="chm-btn chm-bind-btn" title="К каким персонажам относится картинка"><i class="fa-solid fa-user-tag"></i> Персонажи…</button>
+            <div class="chm-bind-pop" hidden>
+                <div class="chm-mono-label">чья картинка</div>
+                <div class="chm-bind-list">${bindListHtml(p)}</div>
+            </div>
+        </div>`;
+    el.addEventListener('click', (e) => {
+        if (e.target.closest('.chm-bind-btn')) {
+            const pop = el.querySelector('.chm-bind-pop');
+            pop.hidden = !pop.hidden;
+            return;
+        }
+        if (e.target.closest('.chm-lightbox-bar')) return;
+        closeLightbox();
+    });
+    el.addEventListener('change', (e) => {
+        const box = e.target.closest('[data-bind]');
+        if (!box) return;
+        toggleBinding(p.id, box.dataset.bind, box.checked);
+    });
     win.appendChild(el);
+}
+
+/** Привязать картинку к персонажу или отвязать от него. */
+function toggleBinding(previewId, charId, on) {
+    const s = getSettings();
+    const p = findPreview(previewId);
+    if (!p) return;
+    const ids = new Set(p.charIds || []);
+    if (on) ids.add(charId);
+    else ids.delete(charId);
+    p.charIds = [...ids];
+    // Отвязали обложку — персонаж возвращается к «последней картинке»
+    const c = s.characters.find((x) => x.id === charId);
+    if (!on && c?.coverId === previewId) c.coverId = null;
+    saveSettings();
+    renderPreview();
 }
 
 // ---------- Генерация ----------
@@ -153,7 +225,7 @@ async function run() {
         return;
     }
     const built = getBuilt();
-    if (!built?.count) {
+    if (!built?.count && !built?.own?.length) {
         toast('Сначала выбери теги — рисовать пока нечего.');
         return;
     }
@@ -205,7 +277,8 @@ async function onClick(e) {
         return;
     }
     if (e.target.closest('.chm-only-char')) {
-        onlyChar = !onlyChar;
+        const c = loadedChar();
+        filterCharId = filterCharId ? null : (c?.id || null);
         renderPreview();
         return;
     }
@@ -221,7 +294,7 @@ async function onClick(e) {
     const p = findPreview(shot.dataset.id);
     if (!p) return;
     if (e.target.closest('.chm-shot-img')) {
-        openLightbox(p.path);
+        openLightbox(p);
         return;
     }
     const dl = e.target.closest('[data-dl]');

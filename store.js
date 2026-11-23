@@ -5,7 +5,7 @@ export const MODULE = 'chimera';     // ключ в extension_settings
 export const TOAST_TITLE = 'Chimera';
 
 export const DEFAULT_SETTINGS = Object.freeze({
-    version: 1,
+    version: 2,
 
     // Кнопка запуска: 'menu' | 'bar' | 'floating' | 'both' (пункт в меню расширений есть всегда)
     launcherMode: 'bar',
@@ -36,6 +36,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
         genericTags: true,   // общие теги: animal ears, horns…
     },
     negative: '',
+    // Свои готовые теги текущей сборки (как вставлены) — встают в конец персонажа
+    ownTags: '',
     custom: { text: '', place: 'start' },   // 'start' | 'end' | 'split'
 
     // Этап 4: рандом
@@ -67,10 +69,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
     size: 'portrait',        // 'portrait' | 'square' | 'landscape'
     styles: [],              // { id, name, tags, negative, fineOn, fine }
     activeStyleId: '',       // '' — без стиля
-    previews: [],            // { id, path, prompt, negative, styleName, size, provider, model, seed, createdAt }
+    previews: [],            // { id, path, prompt, negative, styleName, size, provider, model, seed, charIds, createdAt }
     currentPreviewId: null,  // какая картинка показана в панели
 
-    // Этап 6: сохранённые персонажи — { id, name, build, autoOff, coverId, createdAt, updatedAt }
+    // Этап 6: сохранённые персонажи — { id, name, build, autoOff, ownTags, gender, coverId, createdAt, updatedAt }
+    //   gender: 'm' | 'f' | 'x' (футанари) | '' — не указан
     characters: [],
     loadedCharId: null,      // какой персонаж сейчас загружен (null — никакой)
 });
@@ -103,6 +106,20 @@ export function getSettings() {
     for (const [k, v] of Object.entries(DEFAULT_SETTINGS.aspectMap)) {
         if (!s.aspectMap[k]) s.aspectMap[k] = v;
     }
+    // «Персонажи 2.0»: у превью вместо одного charId — список charIds, у персонажа свои теги и пол
+    if ((Number(s.version) || 1) < 2) {
+        for (const p of s.previews) {
+            if (!Array.isArray(p.charIds)) p.charIds = p.charId ? [p.charId] : [];
+            delete p.charId;
+        }
+        for (const c of s.characters) {
+            if (typeof c.ownTags !== 'string') c.ownTags = '';
+            if (!['m', 'f', 'x'].includes(c.gender)) c.gender = '';
+            if (!Array.isArray(c.build)) c.build = [];
+        }
+        s.version = 2;
+    }
+    if (typeof s.ownTags !== 'string') s.ownTags = '';
     return s;
 }
 

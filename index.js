@@ -6,9 +6,10 @@
 // Этап 4б: режимы, «Рандом всего» / «Просто рандом», пресеты, «Рандом без…», умные правила, палитра
 // Этап 5: генерация превью (NovelAI / наистера), стили, галерея «Мои превью»
 // Этап 6: «Мои персонажи» — сохранить, загрузить, обложки
+// Сцена, этап 2: режим «Сцена» (тумблер «Сцена 18+» в настройках) — позы, место, ракурс, детали, переключатель режимов в шапке
 
 import { getSettings, saveSettings, escapeHtml, TOAST_TITLE } from './store.js';
-import { addSettingsDrawer, settingsPaneHtml, bindSettingsPane, setStylesListener, closeSettingsModal } from './settings.js';
+import { addSettingsDrawer, settingsPaneHtml, bindSettingsPane, setStylesListener, setSceneListener, closeSettingsModal } from './settings.js';
 import { initLaunchers } from './launcher.js';
 import { loadTags } from './data.js';
 import { initCatalog, bindGlobalSearch, refreshAllSelection, renderCatalog, revealTag } from './catalog.js';
@@ -24,6 +25,7 @@ import { banTagWithUndo } from './catalog.js';
 import { toast } from './notice.js';
 import { initRandomCard } from './randomui.js';
 import { checkPresetIds } from './randgen.js';
+import { initScene, refreshScene, availableModes, currentMode, setMode, sceneModeOn, currentSceneBuilt, focusPoseSearch } from './scene.js';
 
 // ---------- Окно ----------
 
@@ -46,13 +48,21 @@ function buildWindow() {
                     </label>
                     <div class="chm-search-results" hidden></div>
                 </div>
+                <div class="chm-viewsw" hidden>
+                    <button class="chm-viewsw-btn" type="button" title="Режим" aria-haspopup="menu" aria-expanded="false">
+                        <i class="chm-viewsw-icon fa-solid fa-user" aria-hidden="true"></i>
+                        <span class="chm-viewsw-label">Персонаж</span>
+                        <i class="fa-solid fa-chevron-down chm-viewsw-caret" aria-hidden="true"></i>
+                    </button>
+                    <div class="chm-viewsw-menu" role="menu" hidden></div>
+                </div>
                 <button class="chm-icon-btn chm-gear" type="button" title="Настройки" aria-pressed="false"><i class="fa-solid fa-gear"></i></button>
                 <button class="chm-icon-btn chm-close" type="button" title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
             <div class="chm-mtabs" role="tablist">
-                <button class="chm-mtab" type="button" data-mtab="catalog">Каталог</button>
-                <button class="chm-mtab" type="button" data-mtab="panel">Персонаж <span class="chm-mtab-count">0</span></button>
+                <button class="chm-mtab" type="button" data-mtab="catalog"><span class="chm-mt-char">Каталог</span><span class="chm-mt-scene">Сцена</span></button>
+                <button class="chm-mtab" type="button" data-mtab="panel"><span class="chm-mt-char">Персонаж <span class="chm-mtab-count">0</span></span><span class="chm-mt-scene">Превью</span></button>
             </div>
 
             <div class="chm-body">
@@ -87,6 +97,17 @@ function buildWindow() {
     overlay.querySelector('.chm-close').addEventListener('click', closeWindow);
     overlay.querySelector('.chm-gear').addEventListener('click', () => (settingsOpen ? closeSettings() : openSettings()));
     overlay.querySelector('.chm-settings-back').addEventListener('click', closeSettings);
+
+    overlay.querySelector('.chm-viewsw-btn').addEventListener('click', () => toggleModeMenu());
+    overlay.querySelector('.chm-viewsw-menu').addEventListener('click', (e) => {
+        const item = e.target.closest('[data-view]');
+        if (!item) return;
+        setMode(item.dataset.view);
+        renderMode();
+    });
+    overlay.addEventListener('click', (e) => {
+        if (!e.target.closest('.chm-viewsw')) closeModeMenu();
+    });
 
     overlay.querySelectorAll('.chm-mtab').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -125,7 +146,8 @@ async function ensureCatalog() {
             },
             onBan: (id) => banTagWithUndo(id),
         });
-        initPreview(overlayEl.querySelector('.chm-gen'), currentPrompt);
+        // Блок генерации один на оба режима: что рисовать, решает режим окна
+        initPreview(overlayEl.querySelector('.chm-gen'), () => (sceneModeOn() ? currentSceneBuilt() : currentPrompt()));
         initCharacters(overlayEl.querySelector('.chm-panel'), db, (opts) => {
             onBuildChange(opts);
             renderPreview();   // кнопка «Сделать обложкой» и фильтр галереи зависят от загруженного
@@ -142,6 +164,8 @@ async function ensureCatalog() {
             refreshStyleSelect();
             renderPanel();
         });
+        initScene(overlayEl.querySelector('.chm-main'), overlayEl.querySelector('.chm-panel'));
+        setSceneListener(() => renderMode());
         initBanList(db, () => onBuildChange({ bans: true }));
         checkPresetIds(db);
         initRandomCard(overlayEl.querySelector('.chm-random-card'), db, (opts) => onBuildChange(opts));
@@ -153,6 +177,7 @@ async function ensureCatalog() {
         );
         catalogReady = true;
         updateCounts();
+        renderMode();   // если окно открылось сразу в режиме «Сцена» — подгрузить позы
     } catch (error) {
         console.error('[Chimera] Не удалось загрузить базу тегов', error);
         list.innerHTML = `<div class="chm-stub chm-stub-big">Не удалось загрузить базу тегов.<br><small>${escapeHtml(error?.message || error)}</small></div>`;
@@ -274,6 +299,49 @@ function renderSettingsState() {
     gear?.setAttribute('aria-pressed', String(settingsOpen));
 }
 
+// ---------- Режимы окна («Персонаж», «Сцена», дальше — «Гардероб») ----------
+
+function toggleModeMenu(force) {
+    const wrap = overlayEl?.querySelector('.chm-viewsw');
+    if (!wrap) return;
+    const menu = wrap.querySelector('.chm-viewsw-menu');
+    const open = typeof force === 'boolean' ? force : menu.hidden;
+    menu.hidden = !open;
+    wrap.querySelector('.chm-viewsw-btn').setAttribute('aria-expanded', String(open));
+}
+
+function closeModeMenu() {
+    toggleModeMenu(false);
+}
+
+function isModeMenuOpen() {
+    return Boolean(overlayEl && overlayEl.querySelector('.chm-viewsw-menu') && !overlayEl.querySelector('.chm-viewsw-menu').hidden);
+}
+
+/** Перерисовать переключатель режимов и показать нужный экран. */
+function renderMode() {
+    if (!overlayEl) return;
+    const modes = availableModes();
+    const mode = currentMode();
+    overlayEl.dataset.view = mode;
+
+    const wrap = overlayEl.querySelector('.chm-viewsw');
+    wrap.hidden = modes.length < 2;   // пока включён один режим, выпадашки нет
+    const cur = modes.find((m) => m.id === mode) || modes[0];
+    wrap.querySelector('.chm-viewsw-label').textContent = cur.label;
+    wrap.querySelector('.chm-viewsw-icon').className = `chm-viewsw-icon fa-solid ${cur.icon}`;
+    wrap.querySelector('.chm-viewsw-menu').innerHTML = modes.map((m) => `
+        <button class="chm-viewsw-item${m.id === mode ? ' chm-active' : ''}" type="button" role="menuitem" data-view="${m.id}">
+            <i class="fa-solid ${m.icon}" aria-hidden="true"></i><span>${escapeHtml(m.label)}</span>
+        </button>`).join('');
+    closeModeMenu();
+
+    if (catalogReady) {
+        if (mode === 'scene') refreshScene();
+        renderPreview();   // блок генерации зависит от режима (обложка, подсказки)
+    }
+}
+
 function renderMobileTabs() {
     if (!overlayEl) return;
     const tab = getSettings().mobileTab === 'panel' ? 'panel' : 'catalog';
@@ -301,6 +369,10 @@ function onKeyDown(e) {
             closeLightbox();
             return;
         }
+        if (isModeMenuOpen()) {
+            closeModeMenu();
+            return;
+        }
         if (isBanListOpen()) {
             closeBanList();
             return;
@@ -316,7 +388,8 @@ function onKeyDown(e) {
     // «/» — сразу в поиск (как на сайте)
     if (e.key === '/' && !isTyping(document.activeElement) && !settingsOpen) {
         e.preventDefault();
-        overlayEl.querySelector('.chm-search-input')?.focus({ preventScroll: true });
+        if (sceneModeOn()) focusPoseSearch();   // в режиме «Сцена» общий поиск по тегам спрятан — ищем позу
+        else overlayEl.querySelector('.chm-search-input')?.focus({ preventScroll: true });
     }
 }
 
@@ -363,6 +436,7 @@ function openWindow() {
     settingsOpen = false;
     renderSettingsState();
     renderMobileTabs();
+    renderMode();
     overlayEl.classList.add('chm-open');
     document.addEventListener('keydown', onKeyDown);
     ensureCatalog();

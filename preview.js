@@ -10,6 +10,7 @@ import { setLauncherBusy } from './launcher.js';
 import { toast } from './notice.js';
 import { renderPanel } from './panel.js';
 import { loadedChar, setCover } from './characters.js';
+import { sceneModeOn } from './scene.js';
 
 let root = null;
 let getBuilt = () => null;
@@ -57,7 +58,7 @@ function currentHtml() {
 
 function coverBtn(p) {
     const c = loadedChar();
-    if (!c) return '';
+    if (!c || sceneModeOn()) return '';   // кадр сцены не делаем обложкой персонажа
     const isCover = c.coverId === p.id;
     return `<button type="button" class="chm-btn chm-shot-cover${isCover ? ' chm-active' : ''}" title="Обложка для «${escapeHtml(c.name)}» в «Моих персонажах»"><i class="fa-solid fa-image-portrait"></i> ${isCover ? 'Обложка' : 'Сделать обложкой'}</button>`;
 }
@@ -226,7 +227,7 @@ async function run() {
     }
     const built = getBuilt();
     if (!built?.count && !built?.own?.length) {
-        toast('Сначала выбери теги — рисовать пока нечего.');
+        toast(sceneModeOn() ? 'Сначала выбери позу — рисовать пока нечего.' : 'Сначала выбери теги — рисовать пока нечего.');
         return;
     }
     retrying = false;

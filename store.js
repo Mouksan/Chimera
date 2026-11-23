@@ -76,6 +76,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
     //   gender: 'm' | 'f' | 'x' (футанари) | '' — не указан
     characters: [],
     loadedCharId: null,      // какой персонаж сейчас загружен (null — никакой)
+
+    // «Сцена 18+»: тумблер в настройках (по умолчанию выключено) и режим окна
+    sceneEnabled: false,
+    mode: 'character',       // 'character' | 'scene' (сцена — только при включённом тумблере)
+    // Последний выбор в режиме «Сцена»: категория поз, поза, место, ракурс, детали, строка поиска
+    scene: { cat: 'all', pose: '', place: '', shot: '', details: [], q: '' },
 });
 
 export function ctx() {
@@ -92,7 +98,7 @@ export function getSettings() {
         if (s[key] === undefined) s[key] = structuredClone(value);
     }
     // Вложенные объекты тоже дотягиваем до текущей версии
-    for (const key of ['toggles', 'custom', 'rnd']) {
+    for (const key of ['toggles', 'custom', 'rnd', 'scene']) {
         for (const [k, v] of Object.entries(DEFAULT_SETTINGS[key])) {
             if (s[key][k] === undefined) s[key][k] = structuredClone(v);
         }
@@ -120,6 +126,9 @@ export function getSettings() {
         s.version = 2;
     }
     if (typeof s.ownTags !== 'string') s.ownTags = '';
+    // Режим «Сцена» живёт только при включённом тумблере
+    if (!s.sceneEnabled || s.mode !== 'scene') s.mode = 'character';
+    if (!Array.isArray(s.scene.details)) s.scene.details = [];
     return s;
 }
 

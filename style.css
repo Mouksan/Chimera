@@ -2836,3 +2836,308 @@ button.chm-row-name:hover {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* ---------- Режимы окна и «Сцена» (сцена, этап 2) ---------- */
+
+/* Переключатель режимов в шапке: между поиском и шестерёнкой */
+.chm-viewsw {
+    position: relative;
+    flex-shrink: 0;
+    margin-left: auto;   /* в режиме «Сцена» общий поиск спрятан — кнопка остаётся у шестерёнки */
+}
+
+.chm-viewsw[hidden] {
+    display: none;
+}
+
+.chm-viewsw-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 34px;
+    padding: 0 12px;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    background: var(--chm-soft);
+    border: 1px solid var(--chm-line);
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.chm-viewsw-btn:hover,
+.chm-viewsw-btn[aria-expanded="true"] {
+    border-color: color-mix(in srgb, var(--chm-accent) 60%, transparent);
+}
+
+.chm-viewsw-icon {
+    color: var(--chm-accent);
+}
+
+.chm-viewsw-caret {
+    font-size: 0.75em;
+    opacity: 0.7;
+}
+
+.chm-viewsw-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 5;
+    display: flex;
+    min-width: 100%;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px;
+    background: var(--SmartThemeBlurTintColor, #1c1c1c);
+    border: 1px solid var(--chm-line);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.chm-viewsw-menu[hidden] {
+    display: none;
+}
+
+.chm-viewsw-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    white-space: nowrap;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.chm-viewsw-item:hover {
+    background: var(--chm-soft);
+}
+
+.chm-viewsw-item.chm-active {
+    color: var(--chm-accent);
+    background: color-mix(in srgb, var(--chm-accent) 14%, transparent);
+}
+
+/* Что видно в каком режиме */
+.chm-overlay:not([data-view="scene"]) .chm-scene-col,
+.chm-overlay:not([data-view="scene"]) .chm-scene-side,
+.chm-overlay:not([data-view="scene"]) .chm-mt-scene {
+    display: none;
+}
+
+.chm-overlay[data-view="scene"] .chm-catalog,
+.chm-overlay[data-view="scene"] .chm-search-wrap,
+.chm-overlay[data-view="scene"] .chm-mt-char {
+    display: none;
+}
+
+/* Правая колонка в режиме «Сцена»: остаётся промт сцены, негатив и блок генерации */
+.chm-overlay[data-view="scene"] .chm-panel > .chm-panel-head,
+.chm-overlay[data-view="scene"] .chm-panel > .chm-char-bar,
+.chm-overlay[data-view="scene"] .chm-panel > .chm-prompt-card,
+.chm-overlay[data-view="scene"] .chm-panel > .chm-custom-fold,
+.chm-overlay[data-view="scene"] .chm-panel > .chm-copy-btn,
+.chm-overlay[data-view="scene"] .chm-panel > .chm-rows-head,
+.chm-overlay[data-view="scene"] .chm-panel > .chm-rows,
+.chm-overlay[data-view="scene"] .chm-panel > .chm-own {
+    display: none;
+}
+
+/* Левая колонка сцены */
+.chm-scene-col {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.chm-scene-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chm-scene-block .chm-card-head {
+    margin-bottom: 0;
+}
+
+.chm-scene-subhead {
+    margin-top: 6px;
+}
+
+.chm-scene-shown {
+    margin-left: auto;
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.8em;
+    font-weight: 400;
+    opacity: 0.65;
+}
+
+.chm-scene-search {
+    flex: none;
+    width: 100%;
+}
+
+.chm-scene-cats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.chm-scene-cat-n {
+    margin-left: 4px;
+    opacity: 0.6;
+}
+
+.chm-scene-poses {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-height: min(46vh, 420px);
+    overflow-y: auto;
+    padding-right: 4px;
+    overscroll-behavior: contain;
+}
+
+.chm-pose {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.chm-pose:hover {
+    background: var(--chm-soft);
+}
+
+.chm-pose.chm-active {
+    color: var(--chm-accent);
+    background: color-mix(in srgb, var(--chm-accent) 14%, transparent);
+    border-color: color-mix(in srgb, var(--chm-accent) 55%, transparent);
+}
+
+.chm-pose-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.chm-pose-badge {
+    flex-shrink: 0;
+    padding: 1px 7px;
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.72em;
+    opacity: 0.75;
+    border: 1px solid var(--chm-line);
+    border-radius: 999px;
+}
+
+.chm-scene-col select.text_pole {
+    width: 100%;
+}
+
+.chm-scene-grp {
+    padding: 8px 12px;
+}
+
+.chm-scene-grp-n {
+    margin-left: 4px;
+    color: var(--chm-accent);
+}
+
+.chm-scene-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.chm-det {
+    padding: 4px 10px;
+    color: inherit;
+    font: inherit;
+    font-size: 0.85em;
+    background: transparent;
+    border: 1px solid var(--chm-line);
+    border-radius: 999px;
+    cursor: pointer;
+    opacity: 0.85;
+}
+
+.chm-det:hover {
+    opacity: 1;
+}
+
+.chm-det.chm-active {
+    color: var(--chm-accent);
+    background: color-mix(in srgb, var(--chm-accent) 16%, transparent);
+    border-color: color-mix(in srgb, var(--chm-accent) 60%, transparent);
+    opacity: 1;
+}
+
+.chm-scene-foot {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Правая колонка сцены */
+.chm-scene-side {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.chm-scene-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chm-scene-parts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.chm-scene-part-l {
+    margin-bottom: 2px;
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.72em;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.6;
+}
+
+.chm-scene-safe,
+.chm-scene-removed {
+    margin-top: 8px;
+}
+
+/* Телефон: те же две вкладки, в режиме «Сцена» это «Сцена» и «Превью» */
+@media (max-width: 900px) {
+    .chm-overlay[data-mtab="panel"] .chm-scene-col {
+        display: none;
+    }
+
+    .chm-viewsw-btn {
+        padding: 0 10px;
+    }
+
+    .chm-viewsw-label {
+        max-width: 7.5em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}

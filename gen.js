@@ -5,6 +5,7 @@
 // Тексты ошибок провайдеров оставлены как пришли (по-английски) — их удобно гуглить.
 
 import { ctx, getSettings, saveSettings, makeId } from './store.js';
+import { stripUnsafeText, withSafeNegative } from './safety.js';
 
 const LOG = '[Chimera]';
 export const FOLDER = 'Chimera';
@@ -389,13 +390,18 @@ export async function generatePreview(built, hooks = {}) {
     const s = getSettings();
     const provider = s.provider === 'naistera' ? 'naistera' : 'novelai';
     const style = activeStyle();
-    const prompt = composeWithStyle(built.positive, style);
+    // «Сцена»: защита «только взрослые» вшита — теги про возраст чистятся из плюса даже после стиля,
+    // а анти-детские теги всегда остаются в негативе (в том числе когда у стиля свой негатив)
+    const isScene = Boolean(built.scene);
+    const composed = composeWithStyle(built.positive, style);
+    const prompt = isScene ? stripUnsafeText(composed) : composed;
     // Негатив стиля, если заполнен, заменяет общий (как в Коме); из него тоже выкидываем теги плюса
     const styleNeg = String(style?.negative || '').trim();
     const plus = new Set(prompt.split(',').map(normTag));
-    const negative = styleNeg
+    const negativeRaw = styleNeg
         ? styleNeg.split(',').map((t) => t.trim()).filter((t) => t && !plus.has(normTag(t))).join(', ')
         : built.negative;
+    const negative = isScene ? withSafeNegative(negativeRaw) : negativeRaw;
     const size = NAI_SIZES[s.size] ? s.size : 'portrait';
     const seed = Math.floor(Math.random() * 4294967295);
     const model = NAI_MODELS.some((m) => m.id === s.naiModel) ? s.naiModel : NAI_MODELS[0].id;
@@ -439,7 +445,9 @@ export async function generatePreview(built, hooks = {}) {
             model: provider === 'novelai' ? model : NAISTERA_MODEL,
             route,
             seed: provider === 'novelai' ? seed : null,
-            charIds: s.loadedCharId ? [s.loadedCharId] : [],   // чьё это превью (обложка, галерея персонажа)
+            // чьё это превью (обложка, галерея персонажа); у сцены список свой — пока пустой (привязка к персонажам — этап 4)
+            charIds: Array.isArray(built.charIds) ? built.charIds : (s.loadedCharId ? [s.loadedCharId] : []),
+            ...(built.sceneInfo ? { scene: built.sceneInfo } : {}),
             createdAt: Date.now(),
         };
         s.previews.unshift(entry);

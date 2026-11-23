@@ -16,6 +16,13 @@ export function setStylesListener(fn) {
     onStylesChanged = fn || (() => {});
 }
 
+let onSceneToggled = () => {};
+
+/** Кто перерисовывает шапку и экран, когда тумблер «Сцена 18+» переключили. */
+export function setSceneListener(fn) {
+    onSceneToggled = fn || (() => {});
+}
+
 function categoryHtml(icon, title, body, open = false) {
     return `
         <div class="chm-cat">
@@ -88,12 +95,22 @@ export function settingsPaneHtml() {
             <button type="button" class="menu_button menu_button_icon" id="chm_style_import"><i class="fa-solid fa-file-import"></i><span>Импорт из Комы</span></button>
         </div>`;
 
+    const scene = `
+        <label class="chm-switch">
+            <input type="checkbox" id="chm_scene_enabled" ${s.sceneEnabled ? 'checked' : ''}>
+            <span class="chm-switch-track"></span>
+            <span class="chm-switch-label">Сцена 18+</span>
+        </label>
+        <div class="chm-set-hint">Показывает в шапке переключатель режимов и режим «Сцена»: позы, место, ракурс, детали. По умолчанию выключено. Каталог поз загружается только когда режим открыт.</div>
+        <div class="chm-set-hint">В режиме «Сцена» защита «только взрослые» вшита и не отключается: в промте всегда adult, в негативе всегда анти-детские теги — даже если у стиля свой негатив.</div>`;
+
     return `
         <div class="chm-settings chm-settings-window" id="chm_settings_root">
             ${categoryHtml('fa-rocket', 'Запуск', launch, true)}
             ${categoryHtml('fa-paintbrush', 'Рисование', draw)}
             ${categoryHtml('fa-sliders', 'Тонкая настройка NovelAI', fine)}
             ${categoryHtml('fa-palette', 'Стили', styles)}
+            ${categoryHtml('fa-film', 'Сцена 18+', scene)}
         </div>`;
 }
 
@@ -334,6 +351,14 @@ export function bindSettingsPane() {
         head.setAttribute('aria-expanded', String(!expanded));
         const body = head.nextElementSibling;
         if (body) body.hidden = expanded;
+    });
+
+    document.getElementById('chm_scene_enabled').addEventListener('change', (e) => {
+        const st = getSettings();
+        st.sceneEnabled = e.target.checked;
+        if (!st.sceneEnabled) st.mode = 'character';   // выключили — окно возвращается в «Персонаж»
+        saveSettings();
+        onSceneToggled();
     });
 
     document.getElementById('chm_launcher').addEventListener('change', (e) => {

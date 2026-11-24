@@ -3141,3 +3141,115 @@ button.chm-row-name:hover {
         text-overflow: ellipsis;
     }
 }
+
+/* ---------- Сцена, этап 3: слоты персонажей, рандом и замочки ---------- */
+
+.chm-scene-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chm-scene-roll {
+    flex: 1 1 auto;
+    color: var(--chm-accent);
+    font-weight: 700;
+    border-color: color-mix(in srgb, var(--chm-accent) 55%, transparent);
+    background: color-mix(in srgb, var(--chm-accent) 12%, transparent);
+}
+
+.chm-scene-roll:hover {
+    background: color-mix(in srgb, var(--chm-accent) 22%, transparent);
+}
+
+.chm-slots-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chm-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border: 1px solid var(--chm-line);
+    border-radius: 10px;
+    background: var(--chm-soft);
+}
+
+.chm-slot-title {
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.78em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.75;
+}
+
+.chm-slot select.text_pole,
+.chm-slot textarea.text_pole {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.chm-slot-text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.chm-slot-text[hidden],
+.chm-slot-empty[hidden] {
+    display: none;
+}
+
+.chm-slot-swap {
+    margin-left: auto;
+    font-weight: 400;
+    font-size: 0.85em;
+}
+
+.chm-slot-swap:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Замочек у поля: «при рандоме не трогать» */
+.chm-lock {
+    margin-left: auto;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    opacity: 0.55;
+}
+
+.chm-scene-shown + .chm-lock {
+    margin-left: 8px;
+}
+
+.chm-lock:hover {
+    opacity: 1;
+    background: var(--chm-soft);
+}
+
+.chm-lock.chm-active {
+    color: var(--chm-accent);
+    background: color-mix(in srgb, var(--chm-accent) 14%, transparent);
+    border-color: color-mix(in srgb, var(--chm-accent) 55%, transparent);
+    opacity: 1;
+}
+
+.chm-scene-warn {
+    color: var(--chm-warn, #e8b339);
+}
+
+/* Поиск поз не должен вылезать за карточку */
+.chm-scene-search {
+    box-sizing: border-box;
+    max-width: 100%;
+}

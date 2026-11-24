@@ -1,13 +1,16 @@
-// Chimera — режим «Сцена» (этап 2): позы, место, ракурс, детали → промт сцены.
+// Chimera — режим «Сцена» (этапы 2–3): позы, место, ракурс, детали, слоты персонажей A/B/C → промт сцены.
 // Каталоги — data/scene.json (порт из генератора поз; её сюжетные позы с готовыми персонажами не переносим),
 // грузятся только когда режим «Сцена» открыт. Тумблер «Сцена 18+» — в настройках, по умолчанию выключено.
 //
-// На этом этапе слотов персонажей ещё нет: промт склеенный (как у генератора подруги, но без `source#` /
-// `target#` — они нужны только разбивке по персонажам на этапе 4). Генерация идёт тем же блоком, что и в режиме «Персонаж».
-// Безопасность (safety.js) вшита: adult в каждом блоке, анти-детские теги в негативе, вычистка тегов про возраст.
+// Слоты: A — актив, B — пассив, C — третий (только у поз с третьим). В слот ставится персонаж из «Моих персонажей» или
+// просто текст тегов. Промт склеенный (как у генератора подруги, но без `source#` / `target#` — они нужны только разбивке
+// по персонажам на этапе 4). Генерация идёт тем же блоком, что и в режиме «Персонаж».
+// Безопасность (safety.js) вшита: adult man / adult woman / adult в каждом блоке, анти-детские теги в негативе,
+// вычистка тегов про возраст.
 
 import { getSettings, saveSettings, escapeHtml } from './store.js';
 import { ADULT_TAG, ANTI_CHILD_NEG, stripUnsafeTags, withSafeNegative } from './safety.js';
+import { buildPrompt } from './builder.js';
 
 // ---------- Режимы окна ----------
 
@@ -53,6 +56,28 @@ const CATS = [
 ];
 
 const NO_PLACE_LABEL = 'как у позы (или спальня)';
+
+const SLOT_KEYS = ['A', 'B', 'C'];
+const SLOT_TITLES = { A: 'A — актив', B: 'B — пассив', C: 'C — третий' };
+const GENDER_OPTIONS = [['m', '♂ парень'], ['f', '♀ девушка'], ['x', '⚥ футанари'], ['', 'не указан']];
+const GENDER_ICON = { m: '♂', f: '♀', x: '⚥' };
+const LOCK_KEYS = ['pose', 'place', 'shot', 'details'];
+
+// «Счётные» теги задаёт поза (2boys / 3boys…), у слота их быть не должно. futanari убираем до этапа со смешанными парами.
+const COUNT_TAGS = new Set(['1boy', '1girl', 'solo', '2boys', '2girls', '3boys', '3girls', 'multiple boys', 'multiple girls', 'futanari']);
+
+function adultFor(gender) {
+    if (gender === 'm') return 'adult man';
+    if (gender === 'f') return 'adult woman';
+    return ADULT_TAG;    // ⚥ и «не указан»
+}
+
+/** Сколько слотов у позы: B нет у соло-поз, C — только у поз с третьим. */
+function poseShape(a) {
+    const second = a.bot || [];
+    const single = Boolean(a.one) || (!second.length && !a.third);
+    return { B: !single, C: Boolean(a.third) };
+}
 
 let data = null;
 let loading = null;
@@ -109,6 +134,22 @@ function normalizeState() {
     if (st.shot && !data.shots[st.shot]) st.shot = '';
     st.details = (st.details || []).filter((d) => data.detAll.has(d));
     if (typeof st.q !== 'string') st.q = '';
+
+    // Слоты: удалённого персонажа убираем, мусор в полях чиним
+    const ids = new Set((getSettings().characters || []).map((c) => c.id));
+    if (!st.slots || typeof st.slots !== 'object') st.slots = {};
+    for (const k of SLOT_KEYS) {
+        const v = { src: '', charId: '', text: '', gender: '', ...(st.slots[k] || {}) };
+        if (!['', 'char', 'text'].includes(v.src)) v.src = '';
+        if (v.src === 'char' && !ids.has(v.charId)) {
+            v.src = '';
+            v.charId = '';
+        }
+        if (!['m', 'f', 'x', ''].includes(v.gender)) v.gender = '';
+        v.text = String(v.text || '');
+        st.slots[k] = v;
+    }
+    st.locks = { pose: false, place: false, shot: false, details: false, ...(st.locks || {}) };
 }
 
 // ---------- Сборка промта ----------
@@ -136,6 +177,48 @@ function cleanTags(list) {
     return out;
 }
 
+let getDb = () => null;    // база тегов (её отдаёт index.js), нужна, чтобы собрать теги сохранённого персонажа
+
+function dropCount(tags) {
+    return tags.filter((t) => !COUNT_TAGS.has(bare(t)));
+}
+
+/** Что слот кладёт в промт: теги, пол (m/f/x/'') и подпись. */
+function slotInfo(key) {
+    const s = getSettings();
+    const slot = s.scene.slots?.[key];
+    const none = { tags: [], gender: '', who: '' };
+    if (!slot || !slot.src) return none;
+
+    if (slot.src === 'text') {
+        return { tags: dropCount(splitList(slot.text)), gender: slot.gender || '', who: 'свой текст' };
+    }
+
+    const c = (s.characters || []).find((x) => x.id === slot.charId);
+    const db = getDb();
+    if (!c || !db) return none;
+    try {
+        // Теги персонажа — тем же сборщиком, что и в режиме «Персонаж», но по его сохранённой сборке.
+        // Одежда по умолчанию и свои «общие» теги (custom) не нужны: об этом заботятся поза и стиль.
+        const synth = {
+            ...s,
+            build: (c.build || []).filter((b) => db.tags.has(b.id)).map((b) => ({ ...b })),
+            autoOff: [...(c.autoOff || [])],
+            ownTags: c.ownTags || '',
+            toggles: { ...s.toggles, clothing: false },
+            custom: { place: 'start', text: '' },
+            negative: '',
+            loadedCharId: c.id,
+        };
+        const built = buildPrompt(db, synth);
+        const fromBuild = built.gender === 'm' ? 'm' : (built.gender === 'f' ? 'f' : '');
+        return { tags: dropCount(splitList(built.positive)), gender: c.gender || fromBuild, who: c.name };
+    } catch (error) {
+        console.error('[Chimera] Не удалось собрать теги персонажа для слота', key, error);
+        return { ...none, who: c.name };
+    }
+}
+
 function emptyBuilt(s) {
     return {
         scene: true,
@@ -145,16 +228,18 @@ function emptyBuilt(s) {
         negAlways: ANTI_CHILD_NEG,
         count: 0,
         own: [],
-        charIds: [],       // на этапе 2 картинка сцены ни к кому не привязывается
+        charIds: [],
         removed: 0,
+        warnings: [],
         sceneInfo: null,
     };
 }
 
 /**
  * Собрать промт сцены по текущему выбору.
- * @returns {{ scene: true, parts: {key:string,label:string,tags:string[]}[], positive: string, negative: string,
- *             negAlways: readonly string[], count: number, own: [], charIds: [], removed: number, sceneInfo: object|null }}
+ * @returns {{ scene: true, parts: {key:string,label:string,who:string,tags:string[]}[], positive: string, negative: string,
+ *             negAlways: readonly string[], count: number, own: [], charIds: string[], removed: number,
+ *             warnings: string[], sceneInfo: object|null }}
  */
 export function buildScene() {
     const s = getSettings();
@@ -186,21 +271,46 @@ export function buildScene() {
 
     const details = (st.details || []).filter((d) => data.detAll.has(d));
 
-    const single = Boolean(a.one) || (!second.length && !a.third);
+    const shape = poseShape(a);
+    const single = !shape.B;
+    const slotA = slotInfo('A');
     const raw = [
-        { key: 'common', label: 'общее', tags: [...base, ...shotTags, ...details] },
-        // действие и место уходят в блок активного (как в рабочем промпте подруги)
-        { key: 'a', label: single ? 'персонаж' : 'актив (source)', tags: [ADULT_TAG, ...(a.sh || []), ...first, ...placeTags] },
+        { key: 'common', label: 'общее', who: '', tags: [...base, ...shotTags, ...details] },
+        // пол/adult → теги персонажа → общие теги позы → роль → место (действие и место уходят в блок активного, как у подруги)
+        { key: 'a', label: single ? 'персонаж' : 'актив (source)', who: slotA.who, gender: slotA.gender,
+            tags: [adultFor(slotA.gender), ...slotA.tags, ...(a.sh || []), ...first, ...placeTags] },
     ];
-    if (!single) raw.push({ key: 'b', label: 'пассив (target)', tags: [ADULT_TAG, ...second] });
-    if (a.third) raw.push({ key: 'c', label: 'третий', tags: [ADULT_TAG, ...a.third] });
+    if (shape.B) {
+        const slotB = slotInfo('B');
+        raw.push({ key: 'b', label: 'пассив (target)', who: slotB.who, gender: slotB.gender, tags: [adultFor(slotB.gender), ...slotB.tags, ...second] });
+    }
+    if (shape.C) {
+        const slotC = slotInfo('C');
+        raw.push({ key: 'c', label: 'третий', who: slotC.who, gender: slotC.gender, tags: [adultFor(slotC.gender), ...slotC.tags, ...a.third] });
+    }
 
     let removed = 0;
     const parts = raw.map((p) => {
         const safe = stripUnsafeTags(cleanTags(p.tags));
         removed += safe.removed;
-        return { key: p.key, label: p.label, tags: safe.tags };
+        return { key: p.key, label: p.label, who: p.who, tags: safe.tags };
     });
+
+    // Смешанные пары и не-парни пока не поддерживаются: основа сцены считается по позе, теги не меняются
+    const warnings = [];
+    const people = raw.filter((p) => p.key !== 'common');
+    if (people.some((p) => p.gender && p.gender !== 'm')) {
+        const countTag = base.find((t) => /boys|girls/.test(t)) || base[0];
+        warnings.push(`Смешанные пары пока не поддерживаются: основа сцены остаётся «${countTag}»`);
+    }
+
+    // Чьи это картинки: персонажи из слотов, которые реально участвуют в позе
+    const stSlots = st.slots || {};
+    const present = ['A', ...(shape.B ? ['B'] : []), ...(shape.C ? ['C'] : [])];
+    const charIds = [...new Set(present
+        .map((k) => stSlots[k])
+        .filter((v) => v && v.src === 'char' && v.charId)
+        .map((v) => v.charId))];
 
     // Склеенный промт: повторы между блоками выкидываем (в блоках они остаются — пригодятся этапу 4)
     const seen = new Set();
@@ -225,9 +335,10 @@ export function buildScene() {
         negAlways: ANTI_CHILD_NEG,
         count: flat.length,
         own: [],
-        charIds: [],
+        charIds,
         removed,
-        sceneInfo: { pose: st.pose, place: st.place || '', shot: st.shot || '', details },
+        warnings,
+        sceneInfo: { pose: st.pose, place: st.place || '', shot: st.shot || '', details, chars: charIds },
     };
 }
 
@@ -299,12 +410,69 @@ function detailsHtml() {
     }).join('');
 }
 
+function lockBtn(key) {
+    const on = Boolean(st().locks[key]);
+    return `<button type="button" class="chm-lock${on ? ' chm-active' : ''}" data-lock="${key}" aria-pressed="${on}" title="Закреплённое при рандоме не трогаем"><i class="fa-solid ${on ? 'fa-lock' : 'fa-lock-open'}"></i></button>`;
+}
+
+function slotOptions(slot) {
+    const chars = getSettings().characters || [];
+    return `<option value="">пусто</option>`
+        + chars.map((c) => `<option value="c:${escapeHtml(c.id)}" ${slot.src === 'char' && slot.charId === c.id ? 'selected' : ''}>${GENDER_ICON[c.gender] ? `${GENDER_ICON[c.gender]} ` : ''}${escapeHtml(c.name)}</option>`).join('')
+        + `<option value="t" ${slot.src === 'text' ? 'selected' : ''}>свой текст</option>`;
+}
+
+function slotCardHtml(key) {
+    const slot = st().slots[key];
+    const text = slot.src === 'text';
+    return `
+        <div class="chm-slot" data-slot="${key}">
+            <div class="chm-slot-title">${SLOT_TITLES[key]}</div>
+            <select class="text_pole chm-slot-src" aria-label="Кто в слоте ${key}">${slotOptions(slot)}</select>
+            <div class="chm-slot-text" ${text ? '' : 'hidden'}>
+                <textarea class="text_pole chm-slot-tags" rows="2" placeholder="hadrian vaelmont, wolf ears, short silver-gray hair…" spellcheck="false">${escapeHtml(slot.text)}</textarea>
+                <div class="chm-set-hint">Впиши готовые теги через запятую</div>
+                <select class="text_pole chm-slot-gender" aria-label="Пол">${GENDER_OPTIONS.map(([v, l]) => `<option value="${v}" ${slot.gender === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+            </div>
+            <div class="chm-set-hint chm-slot-empty" ${slot.src ? 'hidden' : ''}>Слот пуст — у этого персонажа будут только adult и теги позы</div>
+        </div>`;
+}
+
+/** Слоты, которые нужны выбранной позе: B нет у соло-поз, C только у поз с третьим. */
+function slotsBodyHtml() {
+    const a = data.poses[st().pose];
+    const shape = a ? poseShape(a) : { B: true, C: false };
+    return SLOT_KEYS.filter((k) => k === 'A' || (k === 'B' && shape.B) || (k === 'C' && shape.C)).map(slotCardHtml).join('');
+}
+
+function renderSlots() {
+    if (!col) return;
+    const body = col.querySelector('.chm-slots-body');
+    if (!body) return;
+    body.innerHTML = slotsBodyHtml();
+    const a = data.poses[st().pose];
+    const swap = col.querySelector('.chm-slot-swap');
+    if (swap) swap.disabled = !(a && poseShape(a).B);
+}
+
 function colHtml() {
     const s = st();
     const cats = CATS.map((c) => `<button type="button" class="chm-chip chm-scene-cat${c.id === s.cat ? ' chm-active' : ''}" data-cat="${c.id}">${escapeHtml(c.label)} <span class="chm-scene-cat-n">${data.counts[c.id] || 0}</span></button>`).join('');
     return `
+        <div class="chm-scene-bar">
+            <button type="button" class="chm-btn chm-scene-roll" title="Перебросить всё, что не закреплено замочком"><i class="fa-solid fa-dice"></i> Случайная сцена</button>
+            <button type="button" class="chm-btn chm-scene-reset" title="Сбросить место, ракурс и детали (поза остаётся)"><i class="fa-solid fa-rotate-left"></i> Очистить</button>
+        </div>
+
+        <div class="chm-card chm-scene-block chm-slots">
+            <div class="chm-card-head"><i class="fa-solid fa-users"></i> Персонажи
+                <button type="button" class="chm-btn chm-slot-swap" title="Поменять A и B местами: актив остаётся активом, меняются люди"><i class="fa-solid fa-right-left"></i> Поменять местами</button>
+            </div>
+            <div class="chm-slots-body"></div>
+        </div>
+
         <div class="chm-card chm-scene-block">
-            <div class="chm-card-head"><i class="fa-solid fa-people-arrows"></i> Поза <span class="chm-scene-shown"></span></div>
+            <div class="chm-card-head"><i class="fa-solid fa-people-arrows"></i> Поза <span class="chm-scene-shown"></span>${lockBtn('pose')}</div>
             <label class="chm-search chm-scene-search">
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
                 <input type="search" class="chm-search-input chm-scene-q" placeholder="Найти позу…" autocomplete="off" spellcheck="false" value="${escapeHtml(s.q)}">
@@ -314,21 +482,18 @@ function colHtml() {
         </div>
 
         <div class="chm-card chm-scene-block">
-            <div class="chm-card-head"><i class="fa-solid fa-location-dot"></i> Место</div>
+            <div class="chm-card-head"><i class="fa-solid fa-location-dot"></i> Место ${lockBtn('place')}</div>
             <select class="text_pole chm-scene-place">${placeOptions()}</select>
             <div class="chm-set-hint">«${NO_PLACE_LABEL}» — у многих поз есть своё место, оно и пойдёт в промт. Если выбрать место здесь, оно перебьёт место позы.</div>
-            <div class="chm-card-head chm-scene-subhead"><i class="fa-solid fa-camera"></i> Ракурс</div>
+            <div class="chm-card-head chm-scene-subhead"><i class="fa-solid fa-camera"></i> Ракурс ${lockBtn('shot')}</div>
             <select class="text_pole chm-scene-shot">${shotOptions()}</select>
         </div>
 
         <div class="chm-card chm-scene-block">
-            <div class="chm-card-head"><i class="fa-solid fa-tags"></i> Детали</div>
+            <div class="chm-card-head"><i class="fa-solid fa-tags"></i> Детали ${lockBtn('details')}</div>
             <div class="chm-scene-groups">${detailsHtml()}</div>
         </div>
-
-        <div class="chm-scene-foot">
-            <button type="button" class="chm-btn chm-scene-reset" title="Сбросить место, ракурс и детали (поза остаётся)"><i class="fa-solid fa-rotate-left"></i> Очистить</button>
-        </div>`;
+`;
 }
 
 function partsHtml(built) {
@@ -336,7 +501,7 @@ function partsHtml(built) {
     const comma = '<span class="chm-pcomma">, </span>';
     return built.parts.map((p) => `
         <div class="chm-scene-part">
-            <div class="chm-scene-part-l">${escapeHtml(p.label)}</div>
+            <div class="chm-scene-part-l">${escapeHtml(p.label)}${p.who ? ` · ${escapeHtml(p.who)}` : ''}</div>
             <div class="chm-prompt-text">${p.tags.map((t) => `<span class="chm-ptag">${escapeHtml(t)}</span>`).join(comma)}</div>
         </div>`).join('');
 }
@@ -350,6 +515,7 @@ function sideHtml() {
         <div class="chm-card chm-prompt-card">
             <div class="chm-mono-label">prompt.txt</div>
             <div class="chm-scene-parts"></div>
+            <div class="chm-set-hint chm-scene-warn" hidden></div>
             <div class="chm-set-hint chm-scene-removed" hidden></div>
             <div class="chm-set-hint chm-scene-safe">Вшито и не отключается: в каждом блоке стоит adult, а в негатив при рисовании всегда добавляются ${escapeHtml(ANTI_CHILD_NEG.join(', '))}. Теги про возраст из промта вычищаются.</div>
         </div>`;
@@ -360,6 +526,9 @@ function renderSide() {
     const built = buildScene();
     side.querySelector('.chm-scene-count').textContent = `${built.count} тег.`;
     side.querySelector('.chm-scene-parts').innerHTML = partsHtml(built);
+    const warn = side.querySelector('.chm-scene-warn');
+    warn.hidden = !built.warnings.length;
+    warn.textContent = built.warnings.map((w) => `// ${w}`).join(' ');
     const removed = side.querySelector('.chm-scene-removed');
     removed.hidden = !built.removed;
     removed.textContent = built.removed ? `// убрала ${built.removed} тег. про возраст` : '';
@@ -368,6 +537,7 @@ function renderSide() {
 function renderCol() {
     if (!col) return;
     col.innerHTML = colHtml();
+    renderSlots();
     renderPoseList();
 }
 
@@ -390,6 +560,62 @@ export async function refreshScene() {
     onSceneChange();
 }
 
+// ---------- Рандом и слоты ----------
+
+function pick(list) {
+    return list[Math.floor(Math.random() * list.length)];
+}
+
+/** Занят ли слот: персонаж выбран или вписан текст. */
+function slotFilled(key) {
+    const v = st().slots[key];
+    return Boolean(v && (v.src === 'char' || (v.src === 'text' && v.text.trim())));
+}
+
+/**
+ * «Случайная сцена»: перебрасывает всё, что не закреплено замочком.
+ * Как у генератора подруги: поза — из текущего списка, но поза с третьим берётся только когда слот C занят;
+ * ракурс — без «обрезает…»; деталей 2–5 из общего списка. Слоты персонажей рандом не трогает.
+ */
+function rollScene() {
+    const s = st();
+    const L = s.locks;
+
+    if (!L.pose) {
+        const pool = filteredPoses().filter((n) => !(data.poses[n].third && !slotFilled('C')));
+        if (pool.length) s.pose = pick(pool);
+    }
+    if (!L.place) {
+        // у позы своё место — оставляем «как у позы», иначе случайное из списка
+        const own = data.poses[s.pose]?.place;
+        s.place = own && own.length ? '' : pick(Object.keys(data.sets));
+    }
+    if (!L.shot) {
+        const keys = Object.keys(data.shots);
+        const pool = keys.filter((k) => !k.includes('обрезает'));
+        const key = pick(pool.length ? pool : keys);
+        s.shot = key === keys[0] ? '' : key;
+    }
+    if (!L.details) {
+        const all = [...data.detAll];
+        const want = 2 + Math.floor(Math.random() * 4);
+        const chosen = new Set();
+        while (chosen.size < Math.min(want, all.length)) chosen.add(pick(all));
+        s.details = [...chosen];
+    }
+    renderCol();
+    save();
+}
+
+function swapSlots() {
+    const s = st();
+    const a = data.poses[s.pose];
+    if (!a || !poseShape(a).B) return;
+    [s.slots.A, s.slots.B] = [s.slots.B, s.slots.A];
+    renderSlots();
+    save();
+}
+
 // ---------- События ----------
 
 function save() {
@@ -402,6 +628,26 @@ function onClick(e) {
     if (!data) return;
     const s = st();
 
+    if (e.target.closest('.chm-scene-roll')) {
+        rollScene();
+        return;
+    }
+    if (e.target.closest('.chm-slot-swap')) {
+        swapSlots();
+        return;
+    }
+    const lock = e.target.closest('.chm-lock');
+    if (lock) {
+        const key = lock.dataset.lock;
+        if (!LOCK_KEYS.includes(key)) return;
+        s.locks[key] = !s.locks[key];
+        lock.classList.toggle('chm-active', s.locks[key]);
+        lock.setAttribute('aria-pressed', String(s.locks[key]));
+        lock.querySelector('i').className = `fa-solid ${s.locks[key] ? 'fa-lock' : 'fa-lock-open'}`;
+        saveSettings();
+        return;
+    }
+
     const cat = e.target.closest('[data-cat]');
     if (cat) {
         s.cat = cat.dataset.cat;
@@ -409,6 +655,7 @@ function onClick(e) {
         const list = filteredPoses();
         if (list.length && !list.includes(s.pose)) s.pose = list[0];   // как у подруги: если позы нет в разделе, встаёт первая
         renderPoseList();
+        renderSlots();
         save();
         return;
     }
@@ -421,6 +668,7 @@ function onClick(e) {
             b.classList.toggle('chm-active', on);
             b.setAttribute('aria-selected', String(on));
         });
+        renderSlots();   // у позы может быть другой набор слотов
         save();
         return;
     }
@@ -451,10 +699,18 @@ function onClick(e) {
 }
 
 function onInput(e) {
-    if (!data || !e.target.closest('.chm-scene-q')) return;
-    st().q = e.target.value;
-    renderPoseList();
-    saveSettings();
+    if (!data) return;
+    if (e.target.closest('.chm-scene-q')) {
+        st().q = e.target.value;
+        renderPoseList();
+        saveSettings();
+        return;
+    }
+    const tags = e.target.closest('.chm-slot-tags');
+    if (tags) {
+        st().slots[tags.closest('.chm-slot').dataset.slot].text = tags.value;
+        save();   // слот не перерисовываем — иначе пропадёт фокус в поле
+    }
 }
 
 function onChange(e) {
@@ -464,6 +720,26 @@ function onChange(e) {
         save();
     } else if (e.target.closest('.chm-scene-shot')) {
         st().shot = e.target.value;
+        save();
+    } else if (e.target.closest('.chm-slot-src')) {
+        const card = e.target.closest('.chm-slot');
+        const slot = st().slots[card.dataset.slot];
+        const v = e.target.value;
+        if (v === 't') {
+            slot.src = 'text';
+            slot.charId = '';
+        } else if (v.startsWith('c:')) {
+            slot.src = 'char';
+            slot.charId = v.slice(2);
+        } else {
+            slot.src = '';
+            slot.charId = '';
+        }
+        card.querySelector('.chm-slot-text').hidden = slot.src !== 'text';
+        card.querySelector('.chm-slot-empty').hidden = Boolean(slot.src);
+        save();
+    } else if (e.target.closest('.chm-slot-gender')) {
+        st().slots[e.target.closest('.chm-slot').dataset.slot].gender = e.target.value;
         save();
     }
 }
@@ -477,10 +753,11 @@ export function focusPoseSearch() {
  * Встроить экран сцены в окно.
  * @param {HTMLElement} mainEl — .chm-main (там колонки)
  * @param {HTMLElement} panelEl — .chm-panel (правая колонка)
- * @param {{ onChange?: Function }} callbacks
+ * @param {{ onChange?: Function, getDb?: () => object|null }} callbacks   getDb — база тегов для сборки персонажей слотов
  */
 export function initScene(mainEl, panelEl, callbacks = {}) {
     onSceneChange = callbacks.onChange || (() => {});
+    getDb = callbacks.getDb || (() => null);
 
     col = document.createElement('section');
     col.className = 'chm-col chm-scene-col';

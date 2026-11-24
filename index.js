@@ -7,6 +7,7 @@
 // Этап 5: генерация превью (NovelAI / наистера), стили, галерея «Мои превью»
 // Этап 6: «Мои персонажи» — сохранить, загрузить, обложки
 // Сцена, этап 2: режим «Сцена» (тумблер «Сцена 18+» в настройках) — позы, место, ракурс, детали, переключатель режимов в шапке
+// Сцена, этап 3: слоты персонажей A/B/C (из «Моих» или текстом), «Поменять местами», «Случайная сцена» с замочками
 
 import { getSettings, saveSettings, escapeHtml, TOAST_TITLE } from './store.js';
 import { addSettingsDrawer, settingsPaneHtml, bindSettingsPane, setStylesListener, setSceneListener, closeSettingsModal } from './settings.js';
@@ -164,7 +165,7 @@ async function ensureCatalog() {
             refreshStyleSelect();
             renderPanel();
         });
-        initScene(overlayEl.querySelector('.chm-main'), overlayEl.querySelector('.chm-panel'));
+        initScene(overlayEl.querySelector('.chm-main'), overlayEl.querySelector('.chm-panel'), { getDb: () => tagDb });
         setSceneListener(() => renderMode());
         initBanList(db, () => onBuildChange({ bans: true }));
         checkPresetIds(db);

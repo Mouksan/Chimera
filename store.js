@@ -81,7 +81,16 @@ export const DEFAULT_SETTINGS = Object.freeze({
     sceneEnabled: false,
     mode: 'character',       // 'character' | 'scene' (сцена — только при включённом тумблере)
     // Последний выбор в режиме «Сцена»: категория поз, поза, место, ракурс, детали, строка поиска
-    scene: { cat: 'all', pose: '', place: '', shot: '', details: [], q: '' },
+    // slots: кто в сцене (src: '' | 'char' | 'text'); locks: что рандом не трогает
+    scene: {
+        cat: 'all', pose: '', place: '', shot: '', details: [], q: '',
+        slots: {
+            A: { src: '', charId: '', text: '', gender: '' },
+            B: { src: '', charId: '', text: '', gender: '' },
+            C: { src: '', charId: '', text: '', gender: '' },
+        },
+        locks: { pose: false, place: false, shot: false, details: false },
+    },
 });
 
 export function ctx() {

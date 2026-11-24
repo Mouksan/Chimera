@@ -143,7 +143,10 @@ function httpError(message, status) {
     return error;
 }
 
-async function requestNovelAiDirect({ prompt, negative, model, fine, width, height, seed }, signal) {
+async function requestNovelAiDirect({ prompt, negative, model, fine, width, height, seed, chars }, signal) {
+    // Сцена: prompt — общая база, chars — по блоку на персонажа (NovelAI V4+: characterPrompts / char_captions)
+    const center = { x: 0.5, y: 0.5 };   // при use_coords: false положение решает сама модель, поле лишь обязательно
+    const charList = Array.isArray(chars) ? chars : [];
     const parameters = {
         params_version: 4,
         width, height,
@@ -170,9 +173,9 @@ async function requestNovelAiDirect({ prompt, negative, model, fine, width, heig
         reference_information_extracted_multiple: [],
         reference_strength_multiple: [],
         extra_noise_seed: seed,
-        characterPrompts: [],
-        v4_prompt: { use_coords: false, use_order: true, caption: { base_caption: prompt, char_captions: [] } },
-        v4_negative_prompt: { use_coords: false, use_order: false, caption: { base_caption: negative, char_captions: [] } },
+        characterPrompts: charList.map((c) => ({ prompt: c, uc: '', center, enabled: true })),
+        v4_prompt: { use_coords: false, use_order: true, caption: { base_caption: prompt, char_captions: charList.map((c) => ({ char_caption: c, centers: [center] })) } },
+        v4_negative_prompt: { use_coords: false, use_order: false, caption: { base_caption: negative, char_captions: charList.map(() => ({ char_caption: '', centers: [center] })) } },
     };
     const response = await fetch(`${NAI_HOST}/ai/generate-image`, {
         method: 'POST',
@@ -219,7 +222,9 @@ async function requestNovelAi(params, signal, notify) {
         naiFallbackAnnounced = true;
         notify?.('NovelAI не пускает запросы из браузера — рисую через таверну. Положи ключ ещё и в Подключения к API → NovelAI');
     }
-    return { dataUrl: await requestNovelAiViaTavern(params, signal), route: 'tavern' };
+    // Прокси таверны принимает только плоский промт: блоки персонажей не пройдут, идём склеенным
+    if (params.chars?.length) notify?.('Разбивка по персонажам работает только при прямом запросе NovelAI — иду склеенным');
+    return { dataUrl: await requestNovelAiViaTavern({ ...params, prompt: params.flatPrompt || params.prompt, chars: undefined }, signal), route: 'tavern' };
 }
 
 // ---------- Наистера ----------
@@ -395,6 +400,13 @@ export async function generatePreview(built, hooks = {}) {
     const isScene = Boolean(built.scene);
     const composed = composeWithStyle(built.positive, style);
     const prompt = isScene ? stripUnsafeText(composed) : composed;
+    // NovelAI напрямую + разбивка: стиль идёт в общую базу, персонажные блоки чистятся каждый (теги `#` сохраняются)
+    const split = isScene && provider === 'novelai' && built.nai && built.nai.chars.length
+        ? {
+            base: stripUnsafeText(composeWithStyle(built.nai.base, style)),
+            chars: built.nai.chars.map((c) => stripUnsafeText(c)),
+        }
+        : null;
     // Негатив стиля, если заполнен, заменяет общий (как в Коме); из него тоже выкидываем теги плюса
     const styleNeg = String(style?.negative || '').trim();
     const plus = new Set(prompt.split(',').map(normTag));
@@ -413,7 +425,21 @@ export async function generatePreview(built, hooks = {}) {
         let route = 'naistera';
         if (provider === 'novelai') {
             const dims = NAI_SIZES[size];
-            const result = await requestNovelAi({ prompt, negative, model, fine: effectiveFine(style), width: dims.width, height: dims.height, seed }, signal, hooks.notify);
+            let result;
+            try {
+                result = await requestNovelAi({
+                    prompt: split ? split.base : prompt, flatPrompt: prompt, chars: split ? split.chars : undefined,
+                    negative, model, fine: effectiveFine(style), width: dims.width, height: dims.height, seed,
+                }, signal, hooks.notify);
+            } catch (error) {
+                // NovelAI не принял блоки: повторять склеенным не будем — пусть сначала выключишь разбивку в настройках
+                if (split && (error?.status === 400 || error?.status === 422)) {
+                    const rejected = new Error(`не принял блоки персонажей — выключи «Разбивка по персонажам (NovelAI)» в настройках сцены (${String(error.message).slice(0, 100)})`);
+                    rejected.status = error.status;
+                    throw rejected;
+                }
+                throw error;
+            }
             imageUrl = result.dataUrl;
             route = result.route;
         } else {
@@ -437,7 +463,8 @@ export async function generatePreview(built, hooks = {}) {
         const entry = {
             id: makeId(),
             path,
-            prompt,
+            // у сцены с разбивкой в истории лежит то, что реально ушло: общее | блок A | блок B
+            prompt: split && route === 'direct' ? [split.base, ...split.chars].join(' | ') : prompt,
             negative,
             styleName: style?.name || '',
             size,

@@ -3,8 +3,10 @@
 // грузятся только когда режим «Сцена» открыт. Тумблер «Сцена 18+» — в настройках, по умолчанию выключено.
 //
 // Слоты: A — актив, B — пассив, C — третий (только у поз с третьим). В слот ставится персонаж из «Моих персонажей» или
-// просто текст тегов. Промт склеенный (как у генератора подруги, но без `source#` / `target#` — они нужны только разбивке
-// по персонажам на этапе 4). Генерация идёт тем же блоком, что и в режиме «Персонаж».
+// просто текст тегов. Структура промта: общий блок (основа, общие теги позы, место, детали, ракурс) и блоки персонажей —
+// у каждого пол boy/girl/other, adult, теги слота, роль позы и взаимодействия source# / target# / mutual#.
+// Для NovelAI напрямую блоки уходят персонажными (nai), для Наистеры и таверны — склейка без `#`-тегов (positive).
+// Генерация идёт тем же блоком, что и в режиме «Персонаж».
 // Безопасность (safety.js) вшита: adult man / adult woman / adult в каждом блоке, анти-детские теги в негативе,
 // вычистка тегов про возраст.
 
@@ -162,13 +164,28 @@ function bare(tag) {
     return String(tag).trim().replace(/^[\d.]+::/, '').replace(/::$/, '').toLowerCase();
 }
 
-/** Без повторов и без `source#…` / `target#…` / `mutual#…` (это для разбивки по персонажам, этап 4). */
-function cleanTags(list) {
+const INTERACTION_RE = /^(?:[\d.]+::)?(source|target|mutual)#/i;
+
+function interKind(tag) {
+    const m = String(tag || '').trim().match(INTERACTION_RE);
+    return m ? m[1].toLowerCase() : '';
+}
+
+function noInter(list) {
+    return list.filter((t) => !String(t).includes('#'));
+}
+
+function leadFor(gender) {
+    return gender === 'm' ? 'boy' : (gender === 'f' ? 'girl' : 'other');   // пол персонажа в NovelAI: boy / girl / other
+}
+
+/** Без повторов; `source#…` / `target#…` / `mutual#…` остаются только если keepInter (блоки персонажей). */
+function cleanTags(list, keepInter = false) {
     const seen = new Set();
     const out = [];
     for (const raw of list) {
         const t = String(raw || '').trim();
-        if (!t || t.includes('#')) continue;
+        if (!t || (!keepInter && t.includes('#'))) continue;
         const key = t.toLowerCase();
         if (seen.has(key)) continue;
         seen.add(key);
@@ -231,15 +248,16 @@ function emptyBuilt(s) {
         charIds: [],
         removed: 0,
         warnings: [],
+        nai: null,
         sceneInfo: null,
     };
 }
 
 /**
  * Собрать промт сцены по текущему выбору.
- * @returns {{ scene: true, parts: {key:string,label:string,who:string,tags:string[]}[], positive: string, negative: string,
+ * @returns {{ scene: true, parts: {key:string,label:string,who:string,lead:string,tags:string[]}[], positive: string, negative: string,
  *             negAlways: readonly string[], count: number, own: [], charIds: string[], removed: number,
- *             warnings: string[], sceneInfo: object|null }}
+ *             warnings: string[], nai: {base:string, chars:string[]}|null, sceneInfo: object|null }}
  */
 export function buildScene() {
     const s = getSettings();
@@ -273,32 +291,58 @@ export function buildScene() {
 
     const shape = poseShape(a);
     const single = !shape.B;
+    const split = s.sceneSplit !== false;
     const slotA = slotInfo('A');
-    const raw = [
-        { key: 'common', label: 'общее', who: '', tags: [...base, ...shotTags, ...details] },
-        // пол/adult → теги персонажа → общие теги позы → роль → место (действие и место уходят в блок активного, как у подруги)
+    const sh = a.sh || [];
+
+    // Общий блок: основа, общие теги позы, место, детали, ракурс. Взаимодействия (#) уходят в блоки персонажей
+    const mutual = [...sh, ...details].filter((t) => interKind(t) === 'mutual');
+    const common = { key: 'common', label: 'общее', who: '', lead: '', tags: [...base, ...noInter(sh), ...placeTags, ...noInter(details), ...shotTags] };
+    const people = [
+        // пол/adult → теги персонажа → роль позы (source#…) → взаимодействия
         { key: 'a', label: single ? 'персонаж' : 'актив (source)', who: slotA.who, gender: slotA.gender,
-            tags: [adultFor(slotA.gender), ...slotA.tags, ...(a.sh || []), ...first, ...placeTags] },
+            tags: [adultFor(slotA.gender), ...slotA.tags, ...(a.top || []), ...details.filter((t) => interKind(t) === 'source'), ...mutual] },
     ];
     if (shape.B) {
         const slotB = slotInfo('B');
-        raw.push({ key: 'b', label: 'пассив (target)', who: slotB.who, gender: slotB.gender, tags: [adultFor(slotB.gender), ...slotB.tags, ...second] });
+        people.push({ key: 'b', label: 'пассив (target)', who: slotB.who, gender: slotB.gender,
+            tags: [adultFor(slotB.gender), ...slotB.tags, ...(a.bot || []), ...details.filter((t) => interKind(t) === 'target'), ...mutual] });
     }
     if (shape.C) {
         const slotC = slotInfo('C');
-        raw.push({ key: 'c', label: 'третий', who: slotC.who, gender: slotC.gender, tags: [adultFor(slotC.gender), ...slotC.tags, ...a.third] });
+        people.push({ key: 'c', label: 'третий', who: slotC.who, gender: slotC.gender,
+            tags: [adultFor(slotC.gender), ...slotC.tags, ...(a.third || []), ...mutual] });
     }
 
+    // Защита: теги про возраст вычищаются из каждого блока
     let removed = 0;
-    const parts = raw.map((p) => {
-        const safe = stripUnsafeTags(cleanTags(p.tags));
+    const clean = (tags, keepInter) => {
+        const safe = stripUnsafeTags(cleanTags(tags, keepInter));
         removed += safe.removed;
-        return { key: p.key, label: p.label, who: p.who, tags: safe.tags };
-    });
+        return safe.tags;
+    };
+    const commonTags = clean(common.tags, false);
+    const personBlocks = people.map((p) => ({ key: p.key, label: p.label, who: p.who, lead: leadFor(p.gender), tags: clean(p.tags, true) }));
 
-    // Смешанные пары и не-парни пока не поддерживаются: основа сцены считается по позе, теги не меняются
+    // Склеенный промт (Наистера, таверна, разбивка выключена): общее первым, потом персонажи; `#`-тегов и boy/girl нет
+    const seen = new Set();
+    const flat = [];
+    for (const tags of [commonTags, ...personBlocks.map((p) => noInter(p.tags))]) {
+        for (const t of tags) {
+            const k = t.toLowerCase();
+            if (seen.has(k)) continue;
+            seen.add(k);
+            flat.push(t);
+        }
+    }
+
+    // Что показываем в карточке: при разбивке — как увидит NovelAI (с boy/girl и #-тегами), иначе — склейка по блокам
+    const parts = split
+        ? [{ ...common, tags: commonTags }, ...personBlocks]
+        : [{ ...common, tags: commonTags }, ...personBlocks.map((p) => ({ ...p, lead: '', tags: noInter(p.tags) }))];
+
+    // Смешанные пары и не-парни пока не поддерживаются: основа сцены считается по позе, теги основы не меняются
     const warnings = [];
-    const people = raw.filter((p) => p.key !== 'common');
     if (people.some((p) => p.gender && p.gender !== 'm')) {
         const countTag = base.find((t) => /boys|girls/.test(t)) || base[0];
         warnings.push(`Смешанные пары пока не поддерживаются: основа сцены остаётся «${countTag}»`);
@@ -312,18 +356,6 @@ export function buildScene() {
         .filter((v) => v && v.src === 'char' && v.charId)
         .map((v) => v.charId))];
 
-    // Склеенный промт: повторы между блоками выкидываем (в блоках они остаются — пригодятся этапу 4)
-    const seen = new Set();
-    const flat = [];
-    for (const p of parts) {
-        for (const t of p.tags) {
-            const k = t.toLowerCase();
-            if (seen.has(k)) continue;
-            seen.add(k);
-            flat.push(t);
-        }
-    }
-
     const plus = new Set(flat.map(bare));
     const negKept = splitList(s.negative).filter((t) => !plus.has(bare(t)));
 
@@ -331,6 +363,8 @@ export function buildScene() {
         scene: true,
         parts,
         positive: flat.join(', '),
+        // NovelAI напрямую: base_caption + по блоку на персонажа (стиль gen.js добавит в базу)
+        nai: split ? { base: commonTags.join(', '), chars: personBlocks.map((p) => [p.lead, ...p.tags].join(', ')) } : null,
         negative: withSafeNegative(negKept.join(', ')),
         negAlways: ANTI_CHILD_NEG,
         count: flat.length,
@@ -502,7 +536,7 @@ function partsHtml(built) {
     return built.parts.map((p) => `
         <div class="chm-scene-part">
             <div class="chm-scene-part-l">${escapeHtml(p.label)}${p.who ? ` · ${escapeHtml(p.who)}` : ''}</div>
-            <div class="chm-prompt-text">${p.tags.map((t) => `<span class="chm-ptag">${escapeHtml(t)}</span>`).join(comma)}</div>
+            <div class="chm-prompt-text">${[...(p.lead ? [p.lead] : []), ...p.tags].map((t) => `<span class="chm-ptag">${escapeHtml(t)}</span>`).join(comma)}</div>
         </div>`).join('');
 }
 
@@ -515,6 +549,7 @@ function sideHtml() {
         <div class="chm-card chm-prompt-card">
             <div class="chm-mono-label">prompt.txt</div>
             <div class="chm-scene-parts"></div>
+            <div class="chm-set-hint chm-scene-route"></div>
             <div class="chm-set-hint chm-scene-warn" hidden></div>
             <div class="chm-set-hint chm-scene-removed" hidden></div>
             <div class="chm-set-hint chm-scene-safe">Вшито и не отключается: в каждом блоке стоит adult, а в негатив при рисовании всегда добавляются ${escapeHtml(ANTI_CHILD_NEG.join(', '))}. Теги про возраст из промта вычищаются.</div>
@@ -526,6 +561,9 @@ function renderSide() {
     const built = buildScene();
     side.querySelector('.chm-scene-count').textContent = `${built.count} тег.`;
     side.querySelector('.chm-scene-parts').innerHTML = partsHtml(built);
+    side.querySelector('.chm-scene-route').textContent = built.nai
+        ? '// NovelAI: по персонажам (общее + блок на каждого) · Наистера и таверна: склеенно'
+        : '// склеенно: общее, потом персонажи (разбивка по персонажам выключена в настройках)';
     const warn = side.querySelector('.chm-scene-warn');
     warn.hidden = !built.warnings.length;
     warn.textContent = built.warnings.map((w) => `// ${w}`).join(' ');

@@ -2,6 +2,7 @@
 // в ящике расширений — только кнопка «Открыть Chimera». Порт схемы из Junket.
 
 import { getSettings, saveSettings, escapeHtml, makeId } from './store.js';
+import { loadSceneData } from './scene.js';
 import { LAUNCHER_MODES, launcherMode, syncLaunchers } from './launcher.js';
 import {
     NAI_MODELS, NAI_SAMPLERS, NAI_SCHEDULES, NAI_FINE_RANGES, RATIO_CHOICES, SIZE_LABELS,
@@ -93,6 +94,7 @@ export function settingsPaneHtml() {
         <div class="chm-style-btns">
             <button type="button" class="menu_button menu_button_icon" id="chm_style_add"><i class="fa-solid fa-plus"></i><span>Новый стиль</span></button>
             <button type="button" class="menu_button menu_button_icon" id="chm_style_import"><i class="fa-solid fa-file-import"></i><span>Импорт из Комы</span></button>
+            <button type="button" class="menu_button menu_button_icon" id="chm_style_import_gen" ${s.sceneEnabled ? '' : 'hidden'}><i class="fa-solid fa-file-import"></i><span>Импорт из генератора поз</span></button>
         </div>`;
 
     const scene = `
@@ -102,6 +104,12 @@ export function settingsPaneHtml() {
             <span class="chm-switch-label">Сцена 18+</span>
         </label>
         <div class="chm-set-hint">Показывает в шапке переключатель режимов и режим «Сцена»: позы, место, ракурс, детали. По умолчанию выключено. Каталог поз загружается только когда режим открыт.</div>
+        <label class="chm-switch">
+            <input type="checkbox" id="chm_scene_split" ${s.sceneSplit !== false ? 'checked' : ''}>
+            <span class="chm-switch-track"></span>
+            <span class="chm-switch-label">Разбивка по персонажам (NovelAI)</span>
+        </label>
+        <div class="chm-set-hint">Каждому персонажу — свой блок тегов. Работает при прямом запросе NovelAI; через Наистеру и таверну промт идёт склеенным. Выключи, если NovelAI ругается на запрос.</div>
         <div class="chm-set-hint">В режиме «Сцена» защита «только взрослые» вшита и не отключается: в промте всегда adult, в негативе всегда анти-детские теги — даже если у стиля свой негатив.</div>`;
 
     return `
@@ -248,6 +256,33 @@ function openKomaImport() {
         toast(k ? 'В Коме нет стилей.' : 'Кома не найдена — она установлена и включена?');
         return;
     }
+    openStylesImport(incoming, {
+        title: 'Стили из Комы',
+        hint: 'Импорт добавляет копии — стили Комы остаются на месте, править их можно независимо.',
+    });
+}
+
+/** Стили из каталога сцены (порт из генератора поз): грузим данные по клику и открываем то же окно с галочками. */
+async function openSceneStylesImport() {
+    let incoming = [];
+    try {
+        incoming = ((await loadSceneData()).styles || []).filter((x) => String(x?.tags || '').trim());
+    } catch (error) {
+        console.error('[Chimera] Не удалось загрузить стили из каталога сцены', error);
+        toast('Не удалось загрузить стили — подробности в консоли.');
+        return;
+    }
+    if (!incoming.length) {
+        toast('В каталоге сцены нет стилей.');
+        return;
+    }
+    openStylesImport(incoming, {
+        title: 'Стили из генератора поз',
+        hint: 'Импорт добавляет копии в твою библиотеку. Уже имеющиеся стили (то же имя и теги) пропускаются.',
+    });
+}
+
+function openStylesImport(incoming, { title, hint }) {
     const mine = getSettings().styles;
     const dup = (x) => mine.some((m) => m.name === x.name && m.tags === x.tags);
 
@@ -255,12 +290,12 @@ function openKomaImport() {
     const wrap = document.createElement('div');
     wrap.className = 'chm-modal-wrap';
     wrap.innerHTML = `
-        <div class="chm-modal" role="dialog" aria-label="Импорт стилей из Комы">
+        <div class="chm-modal" role="dialog" aria-label="${escapeHtml(title)}">
             <div class="chm-modal-head">
-                <span class="chm-modal-title"><i class="fa-solid fa-file-import"></i> Стили из Комы</span>
+                <span class="chm-modal-title"><i class="fa-solid fa-file-import"></i> ${escapeHtml(title)}</span>
                 <button type="button" class="chm-icon-btn chm-modal-close" title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="chm-set-hint">Импорт добавляет копии — стили Комы остаются на месте, править их можно независимо.</div>
+            <div class="chm-set-hint">${escapeHtml(hint)}</div>
             <div class="chm-import-list">
                 ${incoming.map((x, i) => `
                     <label class="checkbox_label chm-import-item${dup(x) ? ' chm-import-dup' : ''}">
@@ -358,8 +393,17 @@ export function bindSettingsPane() {
         st.sceneEnabled = e.target.checked;
         if (!st.sceneEnabled) st.mode = 'character';   // выключили — окно возвращается в «Персонаж»
         saveSettings();
+        document.getElementById('chm_style_import_gen').hidden = !st.sceneEnabled;
         onSceneToggled();
     });
+
+    document.getElementById('chm_scene_split').addEventListener('change', (e) => {
+        getSettings().sceneSplit = e.target.checked;
+        saveSettings();
+        onSceneToggled();   // карточка промта сцены показывает, как уйдёт запрос
+    });
+
+    document.getElementById('chm_style_import_gen').addEventListener('click', openSceneStylesImport);
 
     document.getElementById('chm_launcher').addEventListener('change', (e) => {
         getSettings().launcherMode = LAUNCHER_MODES.some((m) => m.id === e.target.value) ? e.target.value : 'bar';

@@ -67,6 +67,15 @@ function charName(id) {
     return getSettings().characters.find((c) => c.id === id)?.name || '';
 }
 
+/** «5 панелей» для подписи комикса в галерее. */
+function comicPanels(n) {
+    const m10 = n % 10;
+    const m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return `${n} панель`;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return `${n} панели`;
+    return `${n} панелей`;
+}
+
 function galleryHtml() {
     const s = getSettings();
     if (!s.previews.length) return '';
@@ -86,7 +95,7 @@ function galleryHtml() {
             ${chip}
             ${list.length ? '' : '<div class="chm-prompt-empty">// с этим персонажем ещё ничего не рисовали</div>'}
             <div class="chm-thumbs">
-                ${list.map((p) => `<button type="button" class="chm-thumb${p.id === s.currentPreviewId ? ' chm-active' : ''}" data-id="${escapeHtml(p.id)}" title="${escapeHtml(new Date(p.createdAt).toLocaleString())}"><img src="${escapeHtml(p.path)}" alt="" loading="lazy"></button>`).join('')}
+                ${list.map((p) => `<button type="button" class="chm-thumb${p.id === s.currentPreviewId ? ' chm-active' : ''}" data-id="${escapeHtml(p.id)}" title="${escapeHtml((p.scene?.comic ? `комикс · ${comicPanels(p.scene.comic)} · ` : '') + new Date(p.createdAt).toLocaleString())}"><img src="${escapeHtml(p.path)}" alt="" loading="lazy"></button>`).join('')}
             </div>
         </details>`;
 }

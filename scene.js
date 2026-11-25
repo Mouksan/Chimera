@@ -6,12 +6,14 @@
 // просто текст тегов. Структура промта: общий блок (основа, общие теги позы, место, детали, ракурс) и блоки персонажей —
 // у каждого пол boy/girl/other, adult, теги слота, роль позы и взаимодействия source# / target# / mutual#.
 // Для NovelAI напрямую блоки уходят персонажными (nai), для Наистеры и таверны — склейка без `#`-тегов (positive).
+// Комикс: у поз с сюжетом (story) страница рисуется одной картинкой — панели это кадры сюжета (теговый формат, как в
+// генераторе поз: comic, N panels, раскладка позы, «panel i: кто, теги кадра»). Имена персонажей берутся из слотов.
 // Генерация идёт тем же блоком, что и в режиме «Персонаж».
 // Безопасность (safety.js) вшита: adult man / adult woman / adult в каждом блоке, анти-детские теги в негативе,
 // вычистка тегов про возраст.
 
 import { getSettings, saveSettings, escapeHtml } from './store.js';
-import { ADULT_TAG, ANTI_CHILD_NEG, stripUnsafeTags, withSafeNegative } from './safety.js';
+import { ADULT_TAG, ANTI_CHILD_NEG, stripUnsafeTags, stripUnsafeText, withSafeNegative } from './safety.js';
 import { buildPrompt } from './builder.js';
 
 // ---------- Режимы окна ----------
@@ -67,6 +69,27 @@ const LOCK_KEYS = ['pose', 'place', 'shot', 'details'];
 
 // «Счётные» теги задаёт поза (2boys / 3boys…), у слота их быть не должно. futanari убираем до этапа со смешанными парами.
 const COUNT_TAGS = new Set(['1boy', '1girl', 'solo', '2boys', '2girls', '3boys', '3girls', 'multiple boys', 'multiple girls', 'futanari']);
+
+const NAME_RE = /^[A-Za-z][A-Za-z0-9 '.\-]*$/;
+
+/** Имя для промта из имени персонажа: только латиницей, иначе пусто (его впишут руками). */
+function latinName(name) {
+    const n = String(name || '').trim();
+    return NAME_RE.test(n) ? n : '';
+}
+
+function hasStory(a) {
+    return Boolean(a && Array.isArray(a.story) && a.story.length);
+}
+
+/** «1 кадр / 2 кадра / 5 кадров». */
+function plural(n, one, few, many) {
+    const m10 = n % 10;
+    const m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return `${n} ${one}`;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return `${n} ${few}`;
+    return `${n} ${many}`;
+}
 
 function adultFor(gender) {
     if (gender === 'm') return 'adult man';
@@ -141,7 +164,7 @@ function normalizeState() {
     const ids = new Set((getSettings().characters || []).map((c) => c.id));
     if (!st.slots || typeof st.slots !== 'object') st.slots = {};
     for (const k of SLOT_KEYS) {
-        const v = { src: '', charId: '', text: '', gender: '', ...(st.slots[k] || {}) };
+        const v = { src: '', charId: '', text: '', gender: '', name: '', ...(st.slots[k] || {}) };
         if (!['', 'char', 'text'].includes(v.src)) v.src = '';
         if (v.src === 'char' && !ids.has(v.charId)) {
             v.src = '';
@@ -149,9 +172,13 @@ function normalizeState() {
         }
         if (!['m', 'f', 'x', ''].includes(v.gender)) v.gender = '';
         v.text = String(v.text || '');
+        v.name = String(v.name || '');
+        // слот с персонажем без имени: подставить его имя, если оно латиницей
+        if (v.src === 'char' && !v.name.trim()) v.name = latinName((getSettings().characters || []).find((c) => c.id === v.charId)?.name);
         st.slots[k] = v;
     }
     st.locks = { pose: false, place: false, shot: false, details: false, ...(st.locks || {}) };
+    st.comic = st.comic !== false;
 }
 
 // ---------- Сборка промта ----------
@@ -295,27 +322,53 @@ export function buildScene() {
     const slotA = slotInfo('A');
     const sh = a.sh || [];
 
-    // Общий блок: основа, общие теги позы, место, детали, ракурс. Взаимодействия (#) уходят в блоки персонажей
+    // Комикс: у позы с сюжетом страница рисуется одной картинкой, панели — кадры сюжета
+    const comicOn = st.comic !== false && hasStory(a);
+    const customName = (k) => String(st.slots?.[k]?.name || '').trim();
+    const nameOf = (k) => customName(k) || `character ${k}`;          // в комиксе имя нужно всегда: на него ссылаются панели
+    const nameTags = (k) => (comicOn ? [nameOf(k)] : (customName(k) ? [customName(k)] : []));
+    let panelRemoved = 0;
+    let comicTags = [];
+    if (comicOn) {
+        const nm = { A: nameOf('A'), B: nameOf('B'), C: nameOf('C') };
+        const group = shape.C ? `${nm.A}, ${nm.B} and ${nm.C}` : (shape.B ? `${nm.A} and ${nm.B}` : nm.A);
+        const whoFor = (w) => ((w === 'A' || w === 'B' || w === 'C') && (w === 'A' || (w === 'B' && shape.B) || (w === 'C' && shape.C)) ? nm[w] : group);
+        const panels = a.story.map(([who, text], i) => {
+            const raw = `panel ${i + 1}: ${whoFor(who)}, ${text}`;
+            const safe = stripUnsafeText(raw);
+            panelRemoved += raw.split(',').length - safe.split(',').length;
+            return safe;
+        });
+        const preface = shape.C ? `the same three characters in every panel: ${group}`
+            : (shape.B ? `the same two characters in every panel: ${group}` : `the same character in every panel: ${group}`);
+        comicTags = [preface, ...panels];
+    }
+
+    // Общий блок: основа, общие теги позы, (комикс: раскладка), место, детали, ракурс (в комиксе его задаёт кадр), кадры.
+    // Взаимодействия (#) уходят в блоки персонажей
     const mutual = [...sh, ...details].filter((t) => interKind(t) === 'mutual');
-    const common = { key: 'common', label: 'общее', who: '', lead: '', tags: [...base, ...noInter(sh), ...placeTags, ...noInter(details), ...shotTags] };
+    const comicHead = comicOn ? ['comic', `${a.story.length} panels`, ...(a.layout || []), 'narrow gutters'] : [];
+    const comicTail = comicOn ? ['consistent character design', 'same characters in every panel', 'consistent faces', 'no text'] : [];
+    const common = { key: 'common', label: comicOn ? 'общее · комикс' : 'общее', who: '', lead: '',
+        tags: [...base, ...noInter(sh), ...comicHead, ...placeTags, ...noInter(details), ...(comicOn ? [] : shotTags), ...comicTags, ...comicTail] };
     const people = [
-        // пол/adult → теги персонажа → роль позы (source#…) → взаимодействия
+        // [имя] → пол/adult → теги персонажа → роль позы (source#…) → взаимодействия
         { key: 'a', label: single ? 'персонаж' : 'актив (source)', who: slotA.who, gender: slotA.gender,
-            tags: [adultFor(slotA.gender), ...slotA.tags, ...(a.top || []), ...details.filter((t) => interKind(t) === 'source'), ...mutual] },
+            tags: [...nameTags('A'), adultFor(slotA.gender), ...slotA.tags, ...(a.top || []), ...details.filter((t) => interKind(t) === 'source'), ...mutual] },
     ];
     if (shape.B) {
         const slotB = slotInfo('B');
         people.push({ key: 'b', label: 'пассив (target)', who: slotB.who, gender: slotB.gender,
-            tags: [adultFor(slotB.gender), ...slotB.tags, ...(a.bot || []), ...details.filter((t) => interKind(t) === 'target'), ...mutual] });
+            tags: [...nameTags('B'), adultFor(slotB.gender), ...slotB.tags, ...(a.bot || []), ...details.filter((t) => interKind(t) === 'target'), ...mutual] });
     }
     if (shape.C) {
         const slotC = slotInfo('C');
         people.push({ key: 'c', label: 'третий', who: slotC.who, gender: slotC.gender,
-            tags: [adultFor(slotC.gender), ...slotC.tags, ...(a.third || []), ...mutual] });
+            tags: [...nameTags('C'), adultFor(slotC.gender), ...slotC.tags, ...(a.third || []), ...mutual] });
     }
 
     // Защита: теги про возраст вычищаются из каждого блока
-    let removed = 0;
+    let removed = panelRemoved;
     const clean = (tags, keepInter) => {
         const safe = stripUnsafeTags(cleanTags(tags, keepInter));
         removed += safe.removed;
@@ -351,6 +404,10 @@ export function buildScene() {
     // Чьи это картинки: персонажи из слотов, которые реально участвуют в позе
     const stSlots = st.slots || {};
     const present = ['A', ...(shape.B ? ['B'] : []), ...(shape.C ? ['C'] : [])];
+    if (comicOn) {
+        const unnamed = present.filter((k) => !customName(k));
+        if (unnamed.length) warnings.push(`Слоты без «Имени в промте» (${unnamed.join(', ')}) в панелях называются ${unnamed.map((k) => `«character ${k}»`).join(', ')} — впиши имена латиницей`);
+    }
     const charIds = [...new Set(present
         .map((k) => stSlots[k])
         .filter((v) => v && v.src === 'char' && v.charId)
@@ -372,7 +429,7 @@ export function buildScene() {
         charIds,
         removed,
         warnings,
-        sceneInfo: { pose: st.pose, place: st.place || '', shot: st.shot || '', details, chars: charIds },
+        sceneInfo: { pose: st.pose, place: st.place || '', shot: st.shot || '', details, chars: charIds, comic: comicOn ? a.story.length : 0 },
     };
 }
 
@@ -463,6 +520,7 @@ function slotCardHtml(key) {
         <div class="chm-slot" data-slot="${key}">
             <div class="chm-slot-title">${SLOT_TITLES[key]}</div>
             <select class="text_pole chm-slot-src" aria-label="Кто в слоте ${key}">${slotOptions(slot)}</select>
+            <input type="text" class="text_pole chm-slot-name" placeholder="Имя в промте, например Veyne" value="${escapeHtml(slot.name || '')}" spellcheck="false" autocomplete="off" aria-label="Имя в промте">
             <div class="chm-slot-text" ${text ? '' : 'hidden'}>
                 <textarea class="text_pole chm-slot-tags" rows="2" placeholder="hadrian vaelmont, wolf ears, short silver-gray hair…" spellcheck="false">${escapeHtml(slot.text)}</textarea>
                 <div class="chm-set-hint">Впиши готовые теги через запятую</div>
@@ -477,6 +535,24 @@ function slotsBodyHtml() {
     const a = data.poses[st().pose];
     const shape = a ? poseShape(a) : { B: true, C: false };
     return SLOT_KEYS.filter((k) => k === 'A' || (k === 'B' && shape.B) || (k === 'C' && shape.C)).map(slotCardHtml).join('');
+}
+
+/** Переключатель комикса: у позы с сюжетом он активен и показывает число кадров; в комиксе «Ракурс» неактивен. */
+function renderComicRow() {
+    if (!col) return;
+    const a = data?.poses[st().pose];
+    const story = hasStory(a);
+    const on = story && st().comic !== false;
+    const toggle = col.querySelector('.chm-comic-toggle');
+    if (!toggle) return;
+    toggle.disabled = !story;
+    toggle.checked = on;
+    col.querySelector('.chm-comic-count').textContent = story ? plural(a.story.length, 'кадр', 'кадра', 'кадров') : '';
+    col.querySelector('.chm-comic-hint').textContent = !story
+        ? 'У этой позы нет сюжета — одна картинка'
+        : (on ? 'В комиксе ракурс задаёт сам кадр' : '');
+    const shot = col.querySelector('.chm-scene-shot');
+    if (shot) shot.disabled = on;
 }
 
 function renderSlots() {
@@ -503,6 +579,7 @@ function colHtml() {
                 <button type="button" class="chm-btn chm-slot-swap" title="Поменять A и B местами: актив остаётся активом, меняются люди"><i class="fa-solid fa-right-left"></i> Поменять местами</button>
             </div>
             <div class="chm-slots-body"></div>
+            <div class="chm-set-hint">«Имя в промте» — латиницей, например Veyne. Нужно, чтобы панели комикса ссылались на персонажей. У персонажа из «Моих» подставляется его имя, если оно латиницей.</div>
         </div>
 
         <div class="chm-card chm-scene-block">
@@ -521,6 +598,15 @@ function colHtml() {
             <div class="chm-set-hint">«${NO_PLACE_LABEL}» — у многих поз есть своё место, оно и пойдёт в промт. Если выбрать место здесь, оно перебьёт место позы.</div>
             <div class="chm-card-head chm-scene-subhead"><i class="fa-solid fa-camera"></i> Ракурс ${lockBtn('shot')}</div>
             <select class="text_pole chm-scene-shot">${shotOptions()}</select>
+            <div class="chm-comic-row">
+                <label class="chm-switch">
+                    <input type="checkbox" class="chm-comic-toggle">
+                    <span class="chm-switch-track"></span>
+                    <span class="chm-switch-label">Комикс по сюжету позы</span>
+                </label>
+                <span class="chm-comic-count"></span>
+            </div>
+            <div class="chm-set-hint chm-comic-hint"></div>
         </div>
 
         <div class="chm-card chm-scene-block">
@@ -536,7 +622,7 @@ function partsHtml(built) {
     return built.parts.map((p) => `
         <div class="chm-scene-part">
             <div class="chm-scene-part-l">${escapeHtml(p.label)}${p.who ? ` · ${escapeHtml(p.who)}` : ''}</div>
-            <div class="chm-prompt-text">${[...(p.lead ? [p.lead] : []), ...p.tags].map((t) => `<span class="chm-ptag">${escapeHtml(t)}</span>`).join(comma)}</div>
+            <div class="chm-prompt-text">${[...(p.lead ? [p.lead] : []), ...p.tags].map((t) => `<span class="chm-ptag${/^panel \d+:/.test(t) ? ' chm-ptag-panel' : ''}">${escapeHtml(t)}</span>`).join(comma)}</div>
         </div>`).join('');
 }
 
@@ -576,6 +662,7 @@ function renderCol() {
     if (!col) return;
     col.innerHTML = colHtml();
     renderSlots();
+    renderComicRow();
     renderPoseList();
 }
 
@@ -694,6 +781,7 @@ function onClick(e) {
         if (list.length && !list.includes(s.pose)) s.pose = list[0];   // как у подруги: если позы нет в разделе, встаёт первая
         renderPoseList();
         renderSlots();
+        renderComicRow();
         save();
         return;
     }
@@ -707,6 +795,7 @@ function onClick(e) {
             b.setAttribute('aria-selected', String(on));
         });
         renderSlots();   // у позы может быть другой набор слотов
+        renderComicRow();
         save();
         return;
     }
@@ -748,6 +837,12 @@ function onInput(e) {
     if (tags) {
         st().slots[tags.closest('.chm-slot').dataset.slot].text = tags.value;
         save();   // слот не перерисовываем — иначе пропадёт фокус в поле
+        return;
+    }
+    const name = e.target.closest('.chm-slot-name');
+    if (name) {
+        st().slots[name.closest('.chm-slot').dataset.slot].name = name.value;
+        save();
     }
 }
 
@@ -769,12 +864,19 @@ function onChange(e) {
         } else if (v.startsWith('c:')) {
             slot.src = 'char';
             slot.charId = v.slice(2);
+            // имя в промте: имя персонажа, если оно латиницей, иначе пусто (впишут руками)
+            slot.name = latinName((getSettings().characters || []).find((c) => c.id === slot.charId)?.name);
+            card.querySelector('.chm-slot-name').value = slot.name;
         } else {
             slot.src = '';
             slot.charId = '';
         }
         card.querySelector('.chm-slot-text').hidden = slot.src !== 'text';
         card.querySelector('.chm-slot-empty').hidden = Boolean(slot.src);
+        save();
+    } else if (e.target.closest('.chm-comic-toggle')) {
+        st().comic = e.target.checked;
+        renderComicRow();
         save();
     } else if (e.target.closest('.chm-slot-gender')) {
         st().slots[e.target.closest('.chm-slot').dataset.slot].gender = e.target.value;

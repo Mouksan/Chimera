@@ -3253,3 +3253,40 @@ button.chm-row-name:hover {
     box-sizing: border-box;
     max-width: 100%;
 }
+
+/* ---------- Сцена, этап 5: комикс по сюжету позы ---------- */
+
+.chm-comic-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.chm-comic-count {
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+
+.chm-comic-toggle:disabled ~ .chm-switch-track,
+.chm-comic-toggle:disabled ~ .chm-switch-label {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.chm-scene-col select.text_pole:disabled {
+    opacity: 0.5;
+}
+
+.chm-slot-name {
+    font-family: var(--monoFontFamily, monospace);
+}
+
+.chm-ptag-panel {
+    display: inline-block;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}

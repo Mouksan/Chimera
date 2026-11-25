@@ -85,10 +85,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
     // slots: кто в сцене (src: '' | 'char' | 'text'); locks: что рандом не трогает
     scene: {
         cat: 'all', pose: '', place: '', shot: '', details: [], q: '',
+        comic: true,             // у позы с сюжетом страница рисуется комиксом (панели = кадры сюжета)
         slots: {
-            A: { src: '', charId: '', text: '', gender: '' },
-            B: { src: '', charId: '', text: '', gender: '' },
-            C: { src: '', charId: '', text: '', gender: '' },
+            A: { src: '', charId: '', text: '', gender: '', name: '' },   // name — «Имя в промте» (на него ссылаются панели комикса)
+            B: { src: '', charId: '', text: '', gender: '', name: '' },
+            C: { src: '', charId: '', text: '', gender: '', name: '' },
         },
         locks: { pose: false, place: false, shot: false, details: false },
     },

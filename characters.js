@@ -5,7 +5,7 @@
 // с загруженным персонажем, руками — в крупном просмотре.
 
 import { getSettings, saveSettings, escapeHtml, makeId } from './store.js';
-import { pushHistory } from './random.js';
+import { pushHistory, clearAll } from './random.js';
 import { currentGender } from './builder.js';
 import { toast } from './notice.js';
 
@@ -265,9 +265,11 @@ function onPanelClick(e) {
         return;
     }
     if (e.target.closest('.chm-char-unload')) {
-        unloadCharacter();
+        // ✕ снимает персонажа вместе с его сборкой и своими тегами (⟲ вернёт); «отцепить, но оставить теги» — это «Сохранить как нового»
+        if (!clearAll()) unloadCharacter();
+        else toast('Персонаж снят, сборка очищена. ⟲ вернёт как было');
         closeSaveRow();
-        onChange({ chars: true });
+        onChange({ chars: true, random: true });
     }
 }
 

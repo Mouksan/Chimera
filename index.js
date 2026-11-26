@@ -21,7 +21,7 @@ import { currentGender, isIncompatible, triggeredGenerics, GENDER_FROM_CHAR } fr
 import { loadConflicts } from './conflicts.js';
 import { banKeyValid } from './bans.js';
 import { initBanList, openBanList, closeBanList, isBanListOpen } from './banlist.js';
-import { resetBuild, unpinAll, undo, canUndo, setHistoryListener } from './random.js';
+import { resetBuild, unpinAll, clearAll, undo, canUndo, setHistoryListener } from './random.js';
 import { banTagWithUndo } from './catalog.js';
 import { toast } from './notice.js';
 import { initRandomCard } from './randomui.js';
@@ -229,6 +229,11 @@ function bindRandomActions() {
             if (resetBuild()) {
                 onBuildChange({ random: true });
                 toast('Сброшено — закреплённое осталось. ⟲ вернёт как было');
+            }
+        } else if (e.target.closest('.chm-act-clearall')) {
+            if (clearAll()) {
+                onBuildChange({ random: true, chars: true });
+                toast('Всё очищено — сборка, свои теги и персонаж. ⟲ вернёт как было');
             }
         } else if (e.target.closest('.chm-act-undo')) {
             if (undo()) onBuildChange({ random: true });

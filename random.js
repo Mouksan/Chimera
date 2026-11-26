@@ -115,6 +115,22 @@ export function rollCategory(db, catId) {
     return { ok: true, id: tag.id };
 }
 
+/**
+ * «Очистить всё»: сборка (вместе с закреплённым), свои теги и загруженный персонаж. ⟲ возвращает всё как было.
+ * Возвращает false, если чистить было нечего.
+ */
+export function clearAll() {
+    const s = getSettings();
+    if (!s.build.length && !(s.ownTags || '').trim() && !s.loadedCharId) return false;
+    pushHistory();
+    s.build = [];
+    s.autoOff = [];
+    s.ownTags = '';
+    s.loadedCharId = null;
+    saveSettings();
+    return true;
+}
+
 /** «Сброс»: убрать всё незакреплённое. */
 export function resetBuild() {
     const s = getSettings();

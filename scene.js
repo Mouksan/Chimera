@@ -622,15 +622,17 @@ function partsHtml(built) {
     return built.parts.map((p) => `
         <div class="chm-scene-part">
             <div class="chm-scene-part-l">${escapeHtml(p.label)}${p.who ? ` · ${escapeHtml(p.who)}` : ''}</div>
-            <div class="chm-prompt-text">${[...(p.lead ? [p.lead] : []), ...p.tags].map((t) => `<span class="chm-ptag${/^panel \d+:/.test(t) ? ' chm-ptag-panel' : ''}">${escapeHtml(t)}</span>`).join(comma)}</div>
+            <div class="chm-scene-text">${[...(p.lead ? [p.lead] : []), ...p.tags].map((t) => `<span class="chm-ptag${/^panel \d+:/.test(t) ? ' chm-ptag-panel' : ''}">${escapeHtml(t)}</span>`).join(comma)}</div>
         </div>`).join('');
 }
 
+// Внимание: panel.js ищет в правой колонке `.chm-prompt-text` и `.chm-panel-count` через querySelector (первое совпадение).
+// Блок сцены лежит выше настоящего промта персонажа, поэтому у него СВОИ классы (chm-scene-text, chm-scene-count).
 function sideHtml() {
     return `
         <div class="chm-scene-head">
             <span class="chm-panel-title">Сцена</span>
-            <span class="chm-panel-count chm-scene-count">0 тег.</span>
+            <span class="chm-scene-count">0 тег.</span>
         </div>
         <div class="chm-card chm-prompt-card">
             <div class="chm-mono-label">prompt.txt</div>

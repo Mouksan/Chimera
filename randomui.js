@@ -91,6 +91,7 @@ function html() {
             <button type="button" class="chm-act chm-act-reset" title="Убрать всё незакреплённое"><i class="fa-solid fa-rotate-left"></i> Сброс</button>
             <button type="button" class="chm-act chm-act-undo" title="Откатить последний рандом или сброс" disabled><i class="fa-solid fa-clock-rotate-left"></i></button>
             <button type="button" class="chm-act chm-act-unpin" title="Открепить все теги"><i class="fa-solid fa-thumbtack"></i> Снять закрепы</button>
+            <button type="button" class="chm-act chm-act-clearall" title="Убрать всё: сборку (и закреплённое), свои теги и персонажа. ⟲ вернёт как было"><i class="fa-solid fa-broom"></i> Очистить всё</button>
             <button type="button" class="chm-act chm-act-banlist" title="Всё, что не предлагает рандом"><i class="fa-solid fa-ban"></i> Бан-лист <span class="chm-banlist-count"></span></button>
         </div>
 

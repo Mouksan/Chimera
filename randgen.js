@@ -426,8 +426,18 @@ function occupied(ctx, catId) {
 
 function stepGender(ctx, preset) {
     if (ctx.gender) return;
-    const want = preset?.gender || (rand(0.05) ? 'o' : (rand(0.5) ? 'f' : 'm'));
-    const tag = ctx.db.cats.get('gender').tags.find((t) => t.gender === want);
+    const tags = ctx.db.cats.get('gender').tags;
+    // Пресет — явный выбор: он сильнее бана. Без пресета берём только пол, чей тег не в бане и не конфликтует
+    let want = preset?.gender;
+    if (!want) {
+        const odds = [['o', 0.05], ['f', 0.475], ['m', 0.475]]
+            .filter(([g]) => canUse(ctx, tags.find((t) => t.gender === g)));
+        const total = odds.reduce((sum, [, w]) => sum + w, 0);
+        if (!total) return;   // все полы в бане — пол в сборку не кладём
+        let roll = Math.random() * total;
+        want = odds.find(([, w]) => (roll -= w) < 0)?.[0] || odds[odds.length - 1][0];
+    }
+    const tag = tags.find((t) => t.gender === want);
     if (tag) add(ctx, tag);
 }
 

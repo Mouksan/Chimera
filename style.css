@@ -3325,3 +3325,291 @@ button.chm-row-name:hover {
     overscroll-behavior: contain;
     padding-right: 4px;
 }
+
+
+/* ---------- Сцена, 6б: каркас (разделы, компактная поза/место/ракурс, чипы с «＋») ---------- */
+
+.chm-scene-tools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.chm-scene-tools .chm-scene-collapse {
+    font-size: 0.8em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.chm-scene-secwrap {
+    position: relative;
+}
+
+.chm-secmenu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 7;
+    display: flex;
+    min-width: 230px;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px;
+    background: var(--SmartThemeBlurTintColor, #1c1c1c);
+    border: 1px solid var(--chm-line);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.chm-secmenu[hidden],
+.chm-scene-sec[hidden],
+.chm-poselib[hidden] {
+    display: none;
+}
+
+.chm-secmenu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.chm-secmenu-item:hover {
+    background: var(--chm-soft);
+}
+
+.chm-secmenu-item.chm-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.chm-secmenu-name {
+    flex: 1;
+}
+
+.chm-secmenu-n {
+    min-width: 1.5em;
+    color: var(--chm-accent);
+    font-family: var(--monoFontFamily, monospace);
+    font-size: 0.85em;
+    text-align: right;
+}
+
+.chm-slots-head,
+.chm-details-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.chm-slots-head {
+    justify-content: flex-end;
+}
+
+/* Поза / Место / Ракурс — три поля в ряд, на узком экране столбиком */
+.chm-frame-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px;
+}
+
+.chm-frame-cell {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.chm-frame-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    font-weight: 700;
+}
+
+.chm-frame-label i:first-child {
+    color: var(--chm-accent);
+}
+
+.chm-frame-cell select.text_pole {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.chm-pose-picker {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+}
+
+.chm-pose-picker .chm-btn {
+    padding: 0 10px;
+    font-size: 1.1em;
+}
+
+.chm-pose-current {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.chm-pose-current[aria-expanded="true"] {
+    border-color: color-mix(in srgb, var(--chm-accent) 60%, transparent);
+}
+
+.chm-pose-current-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Библиотека поз — выпадающая панель под рядом полей */
+.chm-poselib {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+    z-index: 6;
+    display: flex;
+    margin-top: 6px;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    background: var(--SmartThemeBlurTintColor, #1c1c1c);
+    border: 1px solid var(--chm-line);
+    border-radius: 14px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+}
+
+.chm-poselib .chm-card-head {
+    margin: 0;
+}
+
+.chm-scene-poses {
+    position: relative;   /* для ручной прокрутки к активной позе */
+}
+
+.chm-comic-row {
+    margin-top: 10px;
+}
+
+/* Детали: группы как категории «Персонажа», чипы со своими «＋» */
+.chm-scene-grp:not(.chm-open) > .chm-catbox-body {
+    display: none;
+}
+
+.chm-det-wrap {
+    display: inline-flex;
+    align-items: center;
+}
+
+.chm-det.chm-custom::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 6px;
+    background: var(--chm-accent);
+    border-radius: 50%;
+}
+
+.chm-det-wrap .chm-det {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.chm-det-x {
+    padding: 4px 8px;
+    color: inherit;
+    font: inherit;
+    font-size: 0.8em;
+    background: transparent;
+    border: 1px solid var(--chm-line);
+    border-left: none;
+    border-radius: 0 999px 999px 0;
+    opacity: 0.55;
+    cursor: pointer;
+}
+
+.chm-det-x:hover {
+    opacity: 1;
+    color: var(--chm-warn, #e8b339);
+}
+
+.chm-det-add {
+    min-width: 34px;
+    text-align: center;
+    border-style: dashed;
+}
+
+.chm-det-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.chm-det-input {
+    width: 170px;
+    box-sizing: border-box;
+    padding: 4px 10px;
+    font-size: 0.85em;
+}
+
+.chm-det-ok,
+.chm-det-cancel {
+    padding: 4px 9px;
+    color: inherit;
+    font: inherit;
+    background: transparent;
+    border: 1px solid var(--chm-line);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.chm-det-ok:hover {
+    color: var(--chm-accent);
+    border-color: var(--chm-accent);
+}
+
+.chm-det-hint {
+    color: var(--chm-warn, #e8b339);
+}
+
+/* На телефоне ✕ у своего чипа виден всегда, на ПК — ярче при наведении */
+@media (hover: none) {
+    .chm-det-x {
+        opacity: 1;
+    }
+}
+
+.chm-pose-filter {
+    padding: 1px 8px;
+    color: var(--chm-accent);
+    font: inherit;
+    font-size: 0.78em;
+    font-weight: 400;
+    background: color-mix(in srgb, var(--chm-accent) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--chm-accent) 45%, transparent);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.chm-pose-filter[hidden] {
+    display: none;
+}

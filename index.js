@@ -26,7 +26,7 @@ import { banTagWithUndo } from './catalog.js';
 import { toast } from './notice.js';
 import { initRandomCard } from './randomui.js';
 import { checkPresetIds } from './randgen.js';
-import { initScene, refreshScene, availableModes, currentMode, setMode, sceneModeOn, currentSceneBuilt, focusPoseSearch } from './scene.js';
+import { initScene, refreshScene, availableModes, currentMode, setMode, sceneModeOn, currentSceneBuilt, focusPoseSearch, closeSceneOverlays } from './scene.js';
 
 // ---------- Окно ----------
 
@@ -378,6 +378,9 @@ function onKeyDown(e) {
         if (isModeMenuOpen()) {
             closeModeMenu();
             return;
+        }
+        if (sceneModeOn() && closeSceneOverlays()) {
+            return;   // Esc сначала закрывает библиотеку поз / меню «Разделы» / ввод чипа
         }
         if (isBanListOpen()) {
             closeBanList();

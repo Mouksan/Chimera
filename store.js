@@ -92,6 +92,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
             C: { src: '', charId: '', text: '', gender: '', name: '' },
         },
         locks: { pose: false, place: false, shot: false, details: false },
+        // каркас (6б): какие разделы и группы деталей развёрнуты / скрыты и свои чипы по группам деталей
+        ui: { open: {}, groups: {}, hidden: {} },
+        customChips: {},
     },
 });
 

@@ -6,6 +6,8 @@
 // просто текст тегов. Структура промта: общий блок (основа, общие теги позы, место, детали, ракурс) и блоки персонажей —
 // у каждого пол boy/girl/other, adult, теги слота, роль позы и взаимодействия source# / target# / mutual#.
 // Для NovelAI напрямую блоки уходят персонажными (nai), для Наистеры и таверны — склейка без `#`-тегов (positive).
+// Каркас (6б): разделы «Персонажи / Поза и кадр / Детали» сворачиваются и скрываются (скрытый раздел в промте не участвует),
+// поза выбирается из «Библиотеки» (выпадающая панель), «Детали» — мультивыбор-чипы со своими чипами «＋».
 // Комикс: у поз с сюжетом (story) страница рисуется одной картинкой — панели это кадры сюжета (теговый формат, как в
 // генераторе поз: comic, N panels, раскладка позы, «panel i: кто, теги кадра»). Имена персонажей берутся из слотов.
 // Генерация идёт тем же блоком, что и в режиме «Персонаж».
@@ -147,6 +149,17 @@ export async function loadSceneData() {
     return loading;
 }
 
+/** Деталь существует: встроенная или свой чип. */
+function isValidDetail(d) {
+    const st = getSettings().scene;
+    return data.detAll.has(d) || Object.values(st.customChips || {}).some((list) => list.includes(d));
+}
+
+/** Скрытый раздел в промте не участвует (как будто пуст). Основа сцены («Поза и кадр») скрываться не умеет. */
+function isHidden(id) {
+    return id !== 'pose' && Boolean(getSettings().scene.ui?.hidden?.[id]);
+}
+
 /** Привести сохранённый выбор в порядок: что-то могли убрать из каталога. */
 function normalizeState() {
     const st = getSettings().scene;
@@ -157,8 +170,20 @@ function normalizeState() {
     }
     if (st.place && !data.sets[st.place]) st.place = '';
     if (st.shot && !data.shots[st.shot]) st.shot = '';
-    st.details = (st.details || []).filter((d) => data.detAll.has(d));
     if (typeof st.q !== 'string') st.q = '';
+
+    // Каркас: состояние разделов и группы деталей, свои чипы
+    if (!st.ui || typeof st.ui !== 'object') st.ui = {};
+    st.ui.open = { ...(st.ui.open || {}) };
+    st.ui.groups = { ...(st.ui.groups || {}) };
+    st.ui.hidden = { ...(st.ui.hidden || {}) };
+    st.ui.hidden.pose = false;   // основу сцены скрыть нельзя
+    if (!st.customChips || typeof st.customChips !== 'object') st.customChips = {};
+    for (const g of Object.keys(st.customChips)) {
+        if (!data.detGroups[g] || !Array.isArray(st.customChips[g])) delete st.customChips[g];
+        else st.customChips[g] = st.customChips[g].filter((t) => typeof t === 'string' && t.trim());
+    }
+    st.details = (st.details || []).filter(isValidDetail);
 
     // Слоты: удалённого персонажа убираем, мусор в полях чиним
     const ids = new Set((getSettings().characters || []).map((c) => c.id));
@@ -232,7 +257,7 @@ function slotInfo(key) {
     const s = getSettings();
     const slot = s.scene.slots?.[key];
     const none = { tags: [], gender: '', who: '' };
-    if (!slot || !slot.src) return none;
+    if (isHidden('chars') || !slot || !slot.src) return none;
 
     if (slot.src === 'text') {
         return { tags: dropCount(splitList(slot.text)), gender: slot.gender || '', who: 'свой текст' };
@@ -314,7 +339,7 @@ export function buildScene() {
         ? data.sets[st.place]
         : (a.place && a.place.length ? a.place : (data.sets[data.firstSet] || []));
 
-    const details = (st.details || []).filter((d) => data.detAll.has(d));
+    const details = isHidden('details') ? [] : (st.details || []).filter(isValidDetail);
 
     const shape = poseShape(a);
     const single = !shape.B;
@@ -324,7 +349,7 @@ export function buildScene() {
 
     // Комикс: у позы с сюжетом страница рисуется одной картинкой, панели — кадры сюжета
     const comicOn = st.comic !== false && hasStory(a);
-    const customName = (k) => String(st.slots?.[k]?.name || '').trim();
+    const customName = (k) => (isHidden('chars') ? '' : String(st.slots?.[k]?.name || '').trim());
     const nameOf = (k) => customName(k) || `character ${k}`;          // в комиксе имя нужно всегда: на него ссылаются панели
     const nameTags = (k) => (comicOn ? [nameOf(k)] : (customName(k) ? [customName(k)] : []));
     let panelRemoved = 0;
@@ -404,11 +429,11 @@ export function buildScene() {
     // Чьи это картинки: персонажи из слотов, которые реально участвуют в позе
     const stSlots = st.slots || {};
     const present = ['A', ...(shape.B ? ['B'] : []), ...(shape.C ? ['C'] : [])];
-    if (comicOn) {
+    if (comicOn && !isHidden('chars')) {
         const unnamed = present.filter((k) => !customName(k));
         if (unnamed.length) warnings.push(`Слоты без «Имени в промте» (${unnamed.join(', ')}) в панелях называются ${unnamed.map((k) => `«character ${k}»`).join(', ')} — впиши имена латиницей`);
     }
-    const charIds = [...new Set(present
+    const charIds = isHidden('chars') ? [] : [...new Set(present
         .map((k) => stSlots[k])
         .filter((v) => v && v.src === 'char' && v.charId)
         .map((v) => v.charId))];
@@ -440,13 +465,36 @@ export function currentSceneBuilt() {
 
 // ---------- Экран режима ----------
 
-let col = null;       // левая колонка: выбор позы, места, ракурса, деталей
+let col = null;       // левая колонка: разделы «Персонажи», «Поза и кадр», «Детали»
 let side = null;      // кусок правой колонки: промт сцены
 let onSceneChange = () => {};
 let renderedOnce = false;
+let libOpen = false;      // открыта ли «Библиотека поз»
+let chipEditor = '';      // группа деталей, где сейчас открыт ввод своего чипа ('' — нигде)
+let secMenuOpen = false;  // открыто ли меню «Разделы»
+
+const SECTIONS = [
+    { id: 'chars', title: 'Персонажи', en: 'CHARACTERS', hideable: true },
+    { id: 'pose', title: 'Поза и кадр', en: 'POSE & FRAME', hideable: false },
+    { id: 'details', title: 'Детали', en: 'DETAILS', hideable: true },
+];
 
 function st() {
     return getSettings().scene;
+}
+
+/** Раздел развёрнут: по умолчанию открыт только «Персонажи». */
+function isSecOpen(id) {
+    const v = st().ui.open[id];
+    return v === undefined ? id === 'chars' : Boolean(v);
+}
+
+function isGroupOpen(group) {
+    return Boolean(st().ui.groups[group]);
+}
+
+function customList(group) {
+    return st().customChips[group] || [];
 }
 
 function filteredPoses() {
@@ -462,6 +510,15 @@ function poseButton(name) {
     return `<button type="button" class="chm-pose${on ? ' chm-active' : ''}" data-pose="${escapeHtml(name)}" role="option" aria-selected="${on}"><span class="chm-pose-name">${escapeHtml(name)}</span>${badge}</button>`;
 }
 
+/** Активная поза в видимой части списка (вручную: scrollIntoView прокручивает ВСЕ родительские контейнеры). */
+function scrollActivePose() {
+    const box = col?.querySelector('.chm-scene-poses');
+    const act = box?.querySelector('.chm-pose.chm-active');
+    if (!box || !act) return;
+    if (act.offsetTop < box.scrollTop) box.scrollTop = act.offsetTop;
+    else if (act.offsetTop + act.offsetHeight > box.scrollTop + box.clientHeight) box.scrollTop = act.offsetTop + act.offsetHeight - box.clientHeight;
+}
+
 function renderPoseList() {
     if (!col) return;
     const list = filteredPoses();
@@ -469,8 +526,21 @@ function renderPoseList() {
     box.innerHTML = list.map(poseButton).join('') || '<div class="chm-prompt-empty">// ничего не нашла — попробуй короче или по-английски</div>';
     const total = data.counts[st().cat] ?? data.names.length;
     col.querySelector('.chm-scene-shown').textContent = list.length === total ? `${total}` : `${list.length} из ${total}`;
-    const active = box.querySelector('.chm-pose.chm-active');
-    if (active) active.scrollIntoView({ block: 'nearest' });
+    scrollActivePose();
+}
+
+function updatePoseLabel() {
+    const el = col?.querySelector('.chm-pose-current-name');
+    if (!el) return;
+    el.textContent = st().pose;
+    el.parentElement.title = st().pose;
+    // выбранная категория видна на поле: она сужает «Случайную сцену» и ‹ ›
+    const chip = col.querySelector('.chm-pose-filter');
+    if (chip) {
+        const cat = CATS.find((c) => c.id === st().cat);
+        chip.hidden = st().cat === 'all';
+        chip.textContent = cat ? `${cat.label} ✕` : '';
+    }
 }
 
 function placeOptions() {
@@ -487,24 +557,83 @@ function shotOptions() {
     }).join('');
 }
 
-function detailsHtml() {
+// ----- «Детали»: группы-категории и чипы со своим «＋» -----
+
+function chipHtml(text, group, custom, chosen) {
+    const on = chosen.has(text);
+    const main = `<button type="button" class="chm-det${custom ? ' chm-custom' : ''}${on ? ' chm-active' : ''}" data-d="${escapeHtml(text)}" aria-pressed="${on}">${escapeHtml(text)}</button>`;
+    if (!custom) return main;
+    return `<span class="chm-det-wrap">${main}<button type="button" class="chm-det-x" data-group="${escapeHtml(group)}" data-d="${escapeHtml(text)}" title="Удалить свой тег" aria-label="Удалить свой тег ${escapeHtml(text)}">✕</button></span>`;
+}
+
+function chipEditorHtml(group) {
+    return `<span class="chm-det-edit" data-group="${escapeHtml(group)}">
+        <input type="text" class="text_pole chm-det-input" placeholder="свой тег…" maxlength="80" spellcheck="false" autocomplete="off" aria-label="Свой тег">
+        <button type="button" class="chm-det-ok" title="Сохранить">✓</button>
+        <button type="button" class="chm-det-cancel" title="Отмена">✕</button>
+    </span>`;
+}
+
+function chipsBodyHtml(group) {
     const chosen = new Set(st().details);
-    return Object.entries(data.detGroups).map(([group, list], i) => {
-        const n = list.filter((d) => chosen.has(d)).length;
-        return `
-            <details class="chm-fold chm-scene-grp" ${i === 0 || n ? 'open' : ''} data-group="${escapeHtml(group)}">
-                <summary class="chm-mono-label">${escapeHtml(group)} <span class="chm-scene-grp-n">${n || ''}</span></summary>
-                <div class="chm-scene-chips">
-                    ${list.map((d) => `<button type="button" class="chm-det${chosen.has(d) ? ' chm-active' : ''}" data-d="${escapeHtml(d)}" aria-pressed="${chosen.has(d)}">${escapeHtml(d)}</button>`).join('')}
-                </div>
-            </details>`;
-    }).join('');
+    const builtin = data.detGroups[group] || [];
+    const own = customList(group);
+    const add = chipEditor === group
+        ? chipEditorHtml(group)
+        : '<button type="button" class="chm-det chm-det-add" title="Добавить свой тег">＋</button>';
+    return `<div class="chm-scene-chips">
+            ${builtin.map((d) => chipHtml(d, group, false, chosen)).join('')}
+            ${own.map((d) => chipHtml(d, group, true, chosen)).join('')}
+            ${add}
+        </div>
+        <div class="chm-set-hint chm-det-hint" hidden></div>`;
+}
+
+function groupCount(group) {
+    const chosen = new Set(st().details);
+    const all = [...(data.detGroups[group] || []), ...customList(group)];
+    return { n: all.filter((d) => chosen.has(d)).length, total: all.length };
+}
+
+function groupHtml(group) {
+    const open = isGroupOpen(group);
+    const { n, total } = groupCount(group);
+    return `
+        <div class="chm-catbox chm-scene-grp${open ? ' chm-open' : ''}" data-group="${escapeHtml(group)}">
+            <div class="chm-catbox-head">
+                <button type="button" class="chm-catbox-toggle" aria-expanded="${open}">
+                    <i class="fa-solid fa-chevron-down chm-chev"></i>
+                    <span class="chm-catbox-title">${escapeHtml(group)}</span>
+                    <span class="chm-catbox-mode">· мультивыбор</span>
+                </button>
+                <span class="chm-catbox-count${n ? ' chm-has' : ''}">${n ? `${n} / ${total}` : total}</span>
+            </div>
+            <div class="chm-catbox-body">${chipsBodyHtml(group)}</div>
+        </div>`;
+}
+
+function detailsHtml() {
+    return Object.keys(data.detGroups).map(groupHtml).join('');
+}
+
+/** Обновить одну группу деталей (счётчик и чипы), не трогая остальной экран. */
+function renderGroup(group) {
+    const el = [...(col?.querySelectorAll('.chm-scene-grp') || [])].find((x) => x.dataset.group === group);
+    if (!el) return;
+    const { n, total } = groupCount(group);
+    const count = el.querySelector('.chm-catbox-count');
+    count.textContent = n ? `${n} / ${total}` : String(total);
+    count.classList.toggle('chm-has', Boolean(n));
+    el.querySelector('.chm-catbox-body').innerHTML = chipsBodyHtml(group);
+    if (chipEditor === group) el.querySelector('.chm-det-input')?.focus({ preventScroll: true });
 }
 
 function lockBtn(key) {
     const on = Boolean(st().locks[key]);
     return `<button type="button" class="chm-lock${on ? ' chm-active' : ''}" data-lock="${key}" aria-pressed="${on}" title="Закреплённое при рандоме не трогаем"><i class="fa-solid ${on ? 'fa-lock' : 'fa-lock-open'}"></i></button>`;
 }
+
+// ----- «Персонажи» -----
 
 function slotOptions(slot) {
     const chars = getSettings().characters || [];
@@ -565,54 +694,225 @@ function renderSlots() {
     if (swap) swap.disabled = !(a && poseShape(a).B);
 }
 
+// ----- Разделы -----
+
+function sectionHtml(sec, body) {
+    const open = isSecOpen(sec.id);
+    return `
+        <section class="chm-sec chm-scene-sec${open ? ' chm-open' : ''}" data-sec="${sec.id}"${isHidden(sec.id) ? ' hidden' : ''}>
+            <button type="button" class="chm-sec-head" aria-expanded="${open}">
+                <span class="chm-sec-title">${sec.title}</span>
+                <span class="chm-sec-line"></span>
+                <span class="chm-sec-en">${sec.en}</span>
+                <i class="fa-solid fa-chevron-down chm-chev"></i>
+            </button>
+            <div class="chm-sec-body">${body}</div>
+        </section>`;
+}
+
+function anyGroupOpen() {
+    return !isHidden('details') && isSecOpen('details') && Object.keys(data.detGroups).some(isGroupOpen);
+}
+
+function anySectionOpen() {
+    return SECTIONS.some((x) => !isHidden(x.id) && isSecOpen(x.id));
+}
+
+/** Подпись кнопки сворачивания — как в «Персонаже»: «Свернуть всё» → «Свернуть разделы» → «Развернуть разделы». */
+function renderCollapseLabel() {
+    const btn = col?.querySelector('.chm-scene-collapse');
+    if (!btn) return;
+    if (anyGroupOpen()) btn.innerHTML = '<i class="fa-solid fa-compress"></i> Свернуть всё';
+    else if (anySectionOpen()) btn.innerHTML = '<i class="fa-solid fa-angles-up"></i> Свернуть разделы';
+    else btn.innerHTML = '<i class="fa-solid fa-angles-down"></i> Развернуть разделы';
+}
+
+/** Привести DOM в соответствие с состоянием «развёрнуто / свёрнуто / скрыто». */
+function applyOpenStates() {
+    if (!col) return;
+    for (const sec of col.querySelectorAll('.chm-scene-sec')) {
+        const id = sec.dataset.sec;
+        const open = isSecOpen(id);
+        sec.classList.toggle('chm-open', open);
+        sec.querySelector('.chm-sec-head').setAttribute('aria-expanded', String(open));
+        sec.hidden = isHidden(id);
+    }
+    for (const grp of col.querySelectorAll('.chm-scene-grp')) {
+        const open = isGroupOpen(grp.dataset.group);
+        grp.classList.toggle('chm-open', open);
+        grp.querySelector('.chm-catbox-toggle').setAttribute('aria-expanded', String(open));
+    }
+    renderCollapseLabel();
+}
+
+function collapseStep() {
+    const ui = st().ui;
+    if (anyGroupOpen()) ui.groups = {};
+    else if (anySectionOpen()) for (const x of SECTIONS) ui.open[x.id] = false;
+    else for (const x of SECTIONS) ui.open[x.id] = true;
+    saveSettings();
+    applyOpenStates();
+}
+
+function sectionCount(id) {
+    if (id === 'chars') return SLOT_KEYS.filter((k) => slotFilled(k)).length;
+    if (id === 'details') return st().details.length;
+    return 0;
+}
+
+/** Меню «Разделы»: галочки показывать/скрыть и счётчики выбранного. */
+function renderSecMenu() {
+    const menu = col?.querySelector('.chm-secmenu');
+    if (!menu) return;
+    menu.innerHTML = `
+        ${SECTIONS.map((x) => `
+            <label class="chm-secmenu-item${x.hideable ? '' : ' chm-disabled'}" ${x.hideable ? '' : 'title="Основа сцены — скрыть нельзя"'}>
+                <input type="checkbox" data-sec="${x.id}" ${isHidden(x.id) ? '' : 'checked'} ${x.hideable ? '' : 'disabled'}>
+                <span class="chm-secmenu-name">${x.title}</span>
+                <span class="chm-secmenu-n">${x.hideable && sectionCount(x.id) ? sectionCount(x.id) : ''}</span>
+            </label>`).join('')}
+        <div class="chm-set-hint">Скрытые разделы в промте не участвуют, цифра — сколько в них выбрано</div>`;
+    menu.hidden = !secMenuOpen;
+    col.querySelector('.chm-scene-eye')?.setAttribute('aria-expanded', String(secMenuOpen));
+}
+
+function setSecMenu(open) {
+    secMenuOpen = open;
+    renderSecMenu();
+}
+
+// ----- Библиотека поз (выпадающая панель) -----
+
+function setLib(open) {
+    const was = libOpen;
+    libOpen = open;
+    const lib = col?.querySelector('.chm-poselib');
+    if (!lib) return;
+    lib.hidden = !open;
+    if (was && !open && st().q) {
+        // закрыли библиотеку — поиск сбрасывается (иначе скрытая строка тихо сужала бы рандом и ‹ ›)
+        st().q = '';
+        col.querySelector('.chm-scene-q').value = '';
+        renderPoseList();
+        saveSettings();
+    }
+    col.querySelector('.chm-pose-current')?.setAttribute('aria-expanded', String(open));
+    if (open) {
+        scrollActivePose();
+        col.querySelector('.chm-scene-q')?.focus({ preventScroll: true });
+    }
+}
+
+/** Закрыть всплывающее (библиотеку, меню «Разделы», ввод чипа). true — если что-то закрыли: тогда Esc окно не закрывает. */
+export function closeSceneOverlays() {
+    let closed = false;
+    if (libOpen) { setLib(false); closed = true; }
+    if (secMenuOpen) { setSecMenu(false); closed = true; }
+    if (chipEditor) { const g = chipEditor; chipEditor = ''; renderGroup(g); closed = true; }
+    return closed;
+}
+
+export function isSceneOverlayOpen() {
+    return libOpen || secMenuOpen || Boolean(chipEditor);
+}
+
+function setPose(name) {
+    const s = st();
+    s.pose = name;
+    col?.querySelectorAll('.chm-pose').forEach((b) => {
+        const on = b.dataset.pose === name;
+        b.classList.toggle('chm-active', on);
+        b.setAttribute('aria-selected', String(on));
+    });
+    updatePoseLabel();
+    renderSlots();
+    renderComicRow();
+    save();
+}
+
+/** ‹ › — соседняя поза в текущем списке (с учётом категории и поиска). */
+function stepPose(dir) {
+    const list = filteredPoses();
+    if (!list.length) return;
+    let i = list.indexOf(st().pose);
+    i = i < 0 ? (dir > 0 ? 0 : list.length - 1) : (i + dir + list.length) % list.length;
+    setPose(list[i]);
+    scrollActivePose();
+}
+
 function colHtml() {
     const s = st();
     const cats = CATS.map((c) => `<button type="button" class="chm-chip chm-scene-cat${c.id === s.cat ? ' chm-active' : ''}" data-cat="${c.id}">${escapeHtml(c.label)} <span class="chm-scene-cat-n">${data.counts[c.id] || 0}</span></button>`).join('');
+
+    const chars = `
+        <div class="chm-slots-head">
+            <button type="button" class="chm-btn chm-slot-swap" title="Поменять A и B местами: актив остаётся активом, меняются люди"><i class="fa-solid fa-right-left"></i> Поменять местами</button>
+        </div>
+        <div class="chm-slots-body"></div>
+        <div class="chm-set-hint">«Имя в промте» — латиницей, например Veyne. Нужно, чтобы панели комикса ссылались на персонажей. У персонажа из «Моих» подставляется его имя, если оно латиницей.</div>`;
+
+    const pose = `
+        <div class="chm-frame-grid">
+            <div class="chm-frame-cell chm-frame-pose">
+                <div class="chm-frame-label"><i class="fa-solid fa-people-arrows"></i> Поза / действие <button type="button" class="chm-pose-filter" hidden title="Сбросить категорию (она сужает «Случайную сцену» и ‹ ›)"></button> ${lockBtn('pose')}</div>
+                <div class="chm-pose-picker">
+                    <button type="button" class="chm-btn chm-pose-prev" title="Предыдущая поза в списке" aria-label="Предыдущая поза">‹</button>
+                    <button type="button" class="text_pole chm-pose-current" aria-haspopup="listbox" aria-expanded="false" title="Открыть библиотеку поз">
+                        <span class="chm-pose-current-name"></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="chm-btn chm-pose-next" title="Следующая поза в списке" aria-label="Следующая поза">›</button>
+                </div>
+            </div>
+            <div class="chm-frame-cell">
+                <div class="chm-frame-label"><i class="fa-solid fa-location-dot"></i> Место ${lockBtn('place')}</div>
+                <select class="text_pole chm-scene-place" title="«${NO_PLACE_LABEL}» — у многих поз есть своё место. Выбранное здесь перебьёт место позы.">${placeOptions()}</select>
+            </div>
+            <div class="chm-frame-cell">
+                <div class="chm-frame-label"><i class="fa-solid fa-camera"></i> Ракурс ${lockBtn('shot')}</div>
+                <select class="text_pole chm-scene-shot">${shotOptions()}</select>
+            </div>
+            <div class="chm-poselib" hidden>
+                <div class="chm-card-head"><i class="fa-solid fa-book-open"></i> Библиотека поз <span class="chm-scene-shown"></span></div>
+                <label class="chm-search chm-scene-search">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                    <input type="search" class="chm-search-input chm-scene-q" placeholder="Найти позу…" autocomplete="off" spellcheck="false" value="${escapeHtml(s.q)}">
+                </label>
+                <div class="chm-scene-cats">${cats}</div>
+                <div class="chm-scene-poses" role="listbox" aria-label="Поза"></div>
+            </div>
+        </div>
+        <div class="chm-comic-row">
+            <label class="chm-switch">
+                <input type="checkbox" class="chm-comic-toggle">
+                <span class="chm-switch-track"></span>
+                <span class="chm-switch-label">Комикс по сюжету позы</span>
+            </label>
+            <span class="chm-comic-count"></span>
+        </div>
+        <div class="chm-set-hint chm-comic-hint"></div>`;
+
+    const details = `
+        <div class="chm-details-head">
+            <span class="chm-set-hint">выбранное идёт в общий блок промта</span>
+            ${lockBtn('details')}
+        </div>
+        <div class="chm-scene-groups">${detailsHtml()}</div>`;
+
     return `
         <div class="chm-scene-bar">
             <button type="button" class="chm-btn chm-scene-roll" title="Перебросить всё, что не закреплено замочком"><i class="fa-solid fa-dice"></i> Случайная сцена</button>
             <button type="button" class="chm-btn chm-scene-reset" title="Сбросить место, ракурс и детали (поза остаётся)"><i class="fa-solid fa-rotate-left"></i> Очистить</button>
         </div>
-
-        <div class="chm-card chm-scene-block chm-slots">
-            <div class="chm-card-head"><i class="fa-solid fa-users"></i> Персонажи
-                <button type="button" class="chm-btn chm-slot-swap" title="Поменять A и B местами: актив остаётся активом, меняются люди"><i class="fa-solid fa-right-left"></i> Поменять местами</button>
-            </div>
-            <div class="chm-slots-body"></div>
-            <div class="chm-set-hint">«Имя в промте» — латиницей, например Veyne. Нужно, чтобы панели комикса ссылались на персонажей. У персонажа из «Моих» подставляется его имя, если оно латиницей.</div>
+        <div class="chm-scene-tools">
+            <button type="button" class="chm-btn chm-scene-collapse"></button>
+            <span class="chm-scene-secwrap">
+                <button type="button" class="chm-btn chm-scene-eye" title="Показать / скрыть разделы" aria-expanded="false" aria-label="Разделы"><i class="fa-solid fa-eye"></i></button>
+                <div class="chm-secmenu" hidden></div>
+            </span>
         </div>
-
-        <div class="chm-card chm-scene-block">
-            <div class="chm-card-head"><i class="fa-solid fa-people-arrows"></i> Поза <span class="chm-scene-shown"></span>${lockBtn('pose')}</div>
-            <label class="chm-search chm-scene-search">
-                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                <input type="search" class="chm-search-input chm-scene-q" placeholder="Найти позу…" autocomplete="off" spellcheck="false" value="${escapeHtml(s.q)}">
-            </label>
-            <div class="chm-scene-cats">${cats}</div>
-            <div class="chm-scene-poses" role="listbox" aria-label="Поза"></div>
-        </div>
-
-        <div class="chm-card chm-scene-block">
-            <div class="chm-card-head"><i class="fa-solid fa-location-dot"></i> Место ${lockBtn('place')}</div>
-            <select class="text_pole chm-scene-place">${placeOptions()}</select>
-            <div class="chm-set-hint">«${NO_PLACE_LABEL}» — у многих поз есть своё место, оно и пойдёт в промт. Если выбрать место здесь, оно перебьёт место позы.</div>
-            <div class="chm-card-head chm-scene-subhead"><i class="fa-solid fa-camera"></i> Ракурс ${lockBtn('shot')}</div>
-            <select class="text_pole chm-scene-shot">${shotOptions()}</select>
-            <div class="chm-comic-row">
-                <label class="chm-switch">
-                    <input type="checkbox" class="chm-comic-toggle">
-                    <span class="chm-switch-track"></span>
-                    <span class="chm-switch-label">Комикс по сюжету позы</span>
-                </label>
-                <span class="chm-comic-count"></span>
-            </div>
-            <div class="chm-set-hint chm-comic-hint"></div>
-        </div>
-
-        <div class="chm-card chm-scene-block">
-            <div class="chm-card-head"><i class="fa-solid fa-tags"></i> Детали ${lockBtn('details')}</div>
-            <div class="chm-scene-groups">${detailsHtml()}</div>
-        </div>
+        ${sectionHtml(SECTIONS[0], chars)}
+        ${sectionHtml(SECTIONS[1], pose)}
+        ${sectionHtml(SECTIONS[2], details)}
 `;
 }
 
@@ -662,10 +962,16 @@ function renderSide() {
 
 function renderCol() {
     if (!col) return;
+    libOpen = false;
+    chipEditor = '';
+    secMenuOpen = false;
     col.innerHTML = colHtml();
     renderSlots();
     renderComicRow();
     renderPoseList();
+    updatePoseLabel();
+    renderSecMenu();
+    renderCollapseLabel();
 }
 
 /** Подготовить экран: загрузить каталоги и нарисовать выбор и промт. Зовётся при входе в режим. */
@@ -723,7 +1029,7 @@ function rollScene() {
         const key = pick(pool.length ? pool : keys);
         s.shot = key === keys[0] ? '' : key;
     }
-    if (!L.details) {
+    if (!L.details && !isHidden('details')) {
         const all = [...data.detAll];
         const want = 2 + Math.floor(Math.random() * 4);
         const chosen = new Set();
@@ -751,19 +1057,91 @@ function save() {
     onSceneChange();
 }
 
+/** Сохранить свой чип (один тег, без запятых). */
+function commitChip(group) {
+    const grp = [...col.querySelectorAll('.chm-scene-grp')].find((x) => x.dataset.group === group);
+    const input = grp?.querySelector('.chm-det-input');
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) {
+        chipEditor = '';
+        renderGroup(group);
+        return;
+    }
+    if (text.includes(',')) {
+        const hint = grp.querySelector('.chm-det-hint');
+        hint.textContent = 'Один тег на чип — без запятых';
+        hint.hidden = false;
+        input.focus({ preventScroll: true });
+        return;
+    }
+    const s = st();
+    const all = [...(data.detGroups[group] || []), ...customList(group)];
+    const existing = all.find((x) => x.toLowerCase() === text.toLowerCase());   // такой уже есть — просто выбираем его
+    const value = existing || text;
+    if (!existing) {
+        if (!s.customChips[group]) s.customChips[group] = [];
+        s.customChips[group].push(value);
+    }
+    if (!s.details.includes(value)) s.details.push(value);
+    chipEditor = '';
+    renderGroup(group);
+    renderSecMenu();
+    save();
+}
+
 function onClick(e) {
     if (!data) return;
     const s = st();
+    const t = e.target;
 
-    if (e.target.closest('.chm-scene-roll')) {
+    // Ввод своего чипа открыт, а кликнули мимо него: отменяем ввод (клик съедаем, чтобы не промахнуться по чипам)
+    if (chipEditor && !t.closest('.chm-det-edit')) {
+        const g = chipEditor;
+        chipEditor = '';
+        renderGroup(g);
+        return;
+    }
+    // Меню «Разделы» и библиотека закрываются кликом мимо
+    if (secMenuOpen && !t.closest('.chm-scene-secwrap')) setSecMenu(false);
+    if (libOpen && !t.closest('.chm-poselib') && !t.closest('.chm-frame-pose')) setLib(false);
+
+    if (t.closest('.chm-scene-roll')) {
         rollScene();
         return;
     }
-    if (e.target.closest('.chm-slot-swap')) {
+    if (t.closest('.chm-slot-swap')) {
         swapSlots();
         return;
     }
-    const lock = e.target.closest('.chm-lock');
+
+    // Разделы и группы
+    const secHead = t.closest('.chm-sec-head');
+    if (secHead) {
+        const id = secHead.closest('.chm-scene-sec').dataset.sec;
+        s.ui.open[id] = !isSecOpen(id);
+        saveSettings();
+        applyOpenStates();
+        return;
+    }
+    const grpToggle = t.closest('.chm-catbox-toggle');
+    if (grpToggle) {
+        const g = grpToggle.closest('.chm-scene-grp').dataset.group;
+        s.ui.groups[g] = !isGroupOpen(g);
+        saveSettings();
+        applyOpenStates();
+        return;
+    }
+    if (t.closest('.chm-scene-collapse')) {
+        collapseStep();
+        return;
+    }
+    if (t.closest('.chm-scene-eye')) {
+        setSecMenu(!secMenuOpen);
+        return;
+    }
+
+    const lock = t.closest('.chm-lock');
     if (lock) {
         const key = lock.dataset.lock;
         if (!LOCK_KEYS.includes(key)) return;
@@ -775,55 +1153,112 @@ function onClick(e) {
         return;
     }
 
-    const cat = e.target.closest('[data-cat]');
+    // Поза: фильтр-чип, поле, ‹ ›, библиотека
+    if (t.closest('.chm-pose-filter')) {
+        s.cat = 'all';
+        col.querySelectorAll('.chm-scene-cat').forEach((b) => b.classList.toggle('chm-active', b.dataset.cat === 'all'));
+        renderPoseList();
+        updatePoseLabel();
+        saveSettings();
+        return;
+    }
+    if (t.closest('.chm-pose-current')) {
+        setLib(!libOpen);
+        return;
+    }
+    if (t.closest('.chm-pose-prev')) {
+        stepPose(-1);
+        return;
+    }
+    if (t.closest('.chm-pose-next')) {
+        stepPose(1);
+        return;
+    }
+    const cat = t.closest('[data-cat]');
     if (cat) {
         s.cat = cat.dataset.cat;
         col.querySelectorAll('.chm-scene-cat').forEach((b) => b.classList.toggle('chm-active', b === cat));
         const list = filteredPoses();
         if (list.length && !list.includes(s.pose)) s.pose = list[0];   // как у подруги: если позы нет в разделе, встаёт первая
         renderPoseList();
+        updatePoseLabel();
         renderSlots();
         renderComicRow();
         save();
         return;
     }
-
-    const pose = e.target.closest('.chm-pose');
+    const pose = t.closest('.chm-pose');
     if (pose) {
-        s.pose = pose.dataset.pose;
-        col.querySelectorAll('.chm-pose').forEach((b) => {
-            const on = b === pose;
-            b.classList.toggle('chm-active', on);
-            b.setAttribute('aria-selected', String(on));
-        });
-        renderSlots();   // у позы может быть другой набор слотов
-        renderComicRow();
-        save();
+        setPose(pose.dataset.pose);
+        setLib(false);
         return;
     }
 
-    const det = e.target.closest('.chm-det');
+    // Детали: свои чипы
+    const del = t.closest('.chm-det-x');
+    if (del) {
+        const g = del.dataset.group;
+        const d = del.dataset.d;
+        s.customChips[g] = customList(g).filter((x) => x !== d);
+        s.details = s.details.filter((x) => x !== d);
+        renderGroup(g);
+        renderSecMenu();
+        save();
+        return;
+    }
+    const add = t.closest('.chm-det-add');
+    if (add) {
+        chipEditor = add.closest('.chm-scene-grp').dataset.group;
+        renderGroup(chipEditor);
+        return;
+    }
+    if (t.closest('.chm-det-ok')) {
+        commitChip(t.closest('.chm-det-edit').dataset.group);
+        return;
+    }
+    if (t.closest('.chm-det-cancel')) {
+        const g = t.closest('.chm-det-edit').dataset.group;
+        chipEditor = '';
+        renderGroup(g);
+        return;
+    }
+
+    // Детали: выбор чипа
+    const det = t.closest('.chm-det');
     if (det) {
         const d = det.dataset.d;
         const set = new Set(s.details);
         if (set.has(d)) set.delete(d);
         else set.add(d);
         s.details = [...set];
-        det.classList.toggle('chm-active', set.has(d));
-        det.setAttribute('aria-pressed', String(set.has(d)));
-        const grp = det.closest('.chm-scene-grp');
-        const n = grp.querySelectorAll('.chm-det.chm-active').length;
-        grp.querySelector('.chm-scene-grp-n').textContent = n || '';
+        renderGroup(det.closest('.chm-scene-grp').dataset.group);
+        renderSecMenu();
         save();
         return;
     }
 
-    if (e.target.closest('.chm-scene-reset')) {
+    if (t.closest('.chm-scene-reset')) {
         s.place = '';
         s.shot = '';
         s.details = [];
         renderCol();
         save();
+    }
+}
+
+/** Enter сохраняет свой чип, Esc отменяет ввод (и не закрывает окно). */
+function onKeydown(e) {
+    const input = e.target.closest?.('.chm-det-input');
+    if (!input) return;
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        commitChip(input.closest('.chm-det-edit').dataset.group);
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        const g = chipEditor;
+        chipEditor = '';
+        if (g) renderGroup(g);
     }
 }
 
@@ -876,6 +1311,12 @@ function onChange(e) {
         card.querySelector('.chm-slot-text').hidden = slot.src !== 'text';
         card.querySelector('.chm-slot-empty').hidden = Boolean(slot.src);
         save();
+    } else if (e.target.closest('.chm-secmenu input[data-sec]')) {
+        const id = e.target.dataset.sec;
+        st().ui.hidden[id] = !e.target.checked;
+        applyOpenStates();
+        renderSecMenu();
+        save();   // скрытый раздел не участвует в промте
     } else if (e.target.closest('.chm-comic-toggle')) {
         st().comic = e.target.checked;
         renderComicRow();
@@ -888,7 +1329,14 @@ function onChange(e) {
 
 /** Быстрый поиск по позам: «/» в режиме «Сцена». */
 export function focusPoseSearch() {
-    col?.querySelector('.chm-scene-q')?.focus({ preventScroll: true });
+    if (!data || !col) return;
+    const sec = col.querySelector('.chm-scene-sec[data-sec="pose"]');
+    if (sec && !sec.classList.contains('chm-open')) {
+        st().ui.open.pose = true;
+        saveSettings();
+        applyOpenStates();
+    }
+    setLib(true);
 }
 
 /**
@@ -908,6 +1356,12 @@ export function initScene(mainEl, panelEl, callbacks = {}) {
     col.addEventListener('click', onClick);
     col.addEventListener('input', onInput);
     col.addEventListener('change', onChange);
+    col.addEventListener('keydown', onKeydown);
+    // Клик мимо колонки тоже закрывает библиотеку, меню «Разделы» и ввод чипа
+    document.addEventListener('click', (e) => {
+        // composedPath: к этому моменту кликнутый элемент мог быть уже перерисован (отцеплен), contains() ошибся бы
+        if (col && !e.composedPath().includes(col)) closeSceneOverlays();
+    });
 
     side = document.createElement('div');
     side.className = 'chm-scene-side';
